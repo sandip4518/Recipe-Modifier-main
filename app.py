@@ -912,6 +912,19 @@ def check_ingredients_route():
     # Get profile warnings
     profile_warnings = get_profile_warnings(ingredients, current_user)
     
+    # Check if this recipe name is already saved in cookbook
+    is_already_saved = False
+    if current_user.is_authenticated and recipe_name:
+        try:
+            existing = get_food_entries().find_one({
+                "patient_id": current_user.user_id,
+                "recipe_name": {"$regex": f"^{recipe_name.strip()}$", "$options": "i"},
+                "is_favorite": True
+            })
+            is_already_saved = existing is not None
+        except Exception:
+            pass
+    
     return render_template('result.html', 
                          harmful=harmful, 
                          safe=modified_ingredients, 
@@ -924,6 +937,7 @@ def check_ingredients_route():
                          modified_ingredients_json=json.dumps(modified_ingredients),
                          recipe_name=recipe_name,
                          profile_warnings=profile_warnings,
+                         is_already_saved=is_already_saved,
                          moment=datetime.now().strftime('%B %d, %Y at %I:%M %p'))
 
 @app.route('/generate_report/<patient_id>')
@@ -1578,7 +1592,40 @@ def toggle_favorite(entry_id):
         entry = get_food_entries().find_one({"_id": ObjectId(entry_id), "patient_id": current_user.user_id})
         if not entry:
             return jsonify({"error": "Entry not found"}), 404
-            
+        
+        data = request.get_json(force=True, silent=True) or {}
+        force = data.get('force', False)
+        
+        # If user is trying to save (not unsave), check for existing recipe with same name
+        if not entry.get('is_favorite', False):
+            recipe_name = (entry.get('recipe_name') or '').strip()
+            if recipe_name:
+                existing = get_food_entries().find_one({
+                    "patient_id": current_user.user_id,
+                    "recipe_name": {"$regex": f"^{recipe_name}$", "$options": "i"},
+                    "is_favorite": True,
+                    "_id": {"$ne": ObjectId(entry_id)}
+                })
+                
+                if existing and not force:
+                    # Return info about the existing entry so frontend can show confirmation
+                    existing_date = ''
+                    ts = existing.get('timestamp')
+                    if ts:
+                        existing_date = ts.strftime('%b %d, %Y')
+                    return jsonify({
+                        "already_exists": True,
+                        "existing_category": existing.get('category', 'General'),
+                        "existing_date": existing_date
+                    })
+                
+                if existing and force:
+                    # Remove the old duplicate from favorites
+                    get_food_entries().update_one(
+                        {"_id": existing["_id"]},
+                        {"$set": {"is_favorite": False}}
+                    )
+        
         new_status = not entry.get('is_favorite', False)
         get_food_entries().update_one(
             {"_id": ObjectId(entry_id)},
