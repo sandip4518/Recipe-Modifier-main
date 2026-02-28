@@ -297,6 +297,87 @@
             margin-top: 0.25rem;
         }
 
+        /* BMR Recommendation Card */
+        .bmr-recommendation {
+            background: linear-gradient(135deg, rgba(0, 176, 176, 0.08) 0%, rgba(26, 150, 221, 0.08) 100%);
+            border: 2px solid rgba(0, 176, 176, 0.2);
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            animation: fadeSlide 0.4s ease-out;
+        }
+
+        .bmr-recommendation .bmr-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            color: #00856f;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .bmr-recommendation .bmr-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #00b0b0;
+            line-height: 1;
+        }
+
+        .bmr-recommendation .bmr-unit {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
+            margin-left: 0.25rem;
+        }
+
+        .bmr-breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            margin: 0.75rem 0;
+            font-size: 0.825rem;
+            color: #4b5563;
+        }
+
+        .bmr-breakdown .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.25rem 0;
+        }
+
+        .bmr-breakdown .breakdown-item.total {
+            border-top: 1px dashed rgba(0, 176, 176, 0.3);
+            padding-top: 0.5rem;
+            margin-top: 0.25rem;
+            font-weight: 700;
+            color: #00b0b0;
+        }
+
+        .btn-use-recommended {
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #00b0b0 0%, #1a96dd 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-use-recommended:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 176, 176, 0.3);
+        }
+
         .goal-option {
             padding: 1rem;
             border: 2px solid #e5e7eb;
@@ -516,13 +597,46 @@
 
                 <!-- Slide 4: Calorie Target & Goal -->
                 <div class="form-slide" id="slide-4">
+                    <!-- BMR Recommendation (auto-calculated, hidden by default) -->
+                    <div id="bmr-recommendation" class="bmr-recommendation" style="display: none;">
+                        <div class="bmr-header">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            Recommended Daily Calories
+                        </div>
+                        <div style="display: flex; align-items: baseline; gap: 0.25rem; margin-bottom: 0.25rem;">
+                            <span class="bmr-value" id="bmr-recommended-value">--</span>
+                            <span class="bmr-unit">kcal / day</span>
+                        </div>
+                        <div class="bmr-breakdown">
+                            <div class="breakdown-item">
+                                <span>Base Metabolic Rate (BMR)</span>
+                                <span id="bmr-base">--</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span>Activity adjustment (×1.2)</span>
+                                <span id="bmr-activity">--</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span id="bmr-goal-label">Goal adjustment</span>
+                                <span id="bmr-goal-adj">--</span>
+                            </div>
+                            <div class="breakdown-item total">
+                                <span>Your recommended target</span>
+                                <span id="bmr-total">--</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-use-recommended" onclick="useRecommendedCalories()">
+                            <i data-lucide="check" class="w-4 h-4"></i> Use This Recommendation
+                        </button>
+                    </div>
+
                     <div class="form-group">
                         <label for="{{ form.calorie_target.id }}" class="form-label">
                             <span class="icon"><i data-lucide="flame" class="w-4 h-4"></i></span>{{
                             form.calorie_target.label.text }}
                         </label>
                         {{ form.calorie_target(class="form-input", placeholder="e.g., 2000", type="number") }}
-                        <div class="input-hint">Your daily calorie goal (we'll help you calculate this)</div>
+                        <div class="input-hint" id="calorie-hint">Your daily calorie goal — calculated from your profile data above</div>
                         {% if form.calorie_target.errors %}
                         {% for error in form.calorie_target.errors %}
                         <div class="error-text"><i data-lucide="alert-circle" class="inline-block w-3 h-3 mr-1"></i> {{
@@ -563,9 +677,108 @@
     <script>
         let currentSlide = 1;
         const totalSlides = 4;
+        let recommendedCalories = null;
 
         // Initialize Lucide icons
         lucide.createIcons();
+
+        // ---- BMR Auto-Calculation (Mifflin-St Jeor Equation) ----
+        function calculateBMR() {
+            const age = parseInt(document.getElementById('age')?.value);
+            const weight = parseFloat(document.getElementById('weight')?.value);
+            const height = parseFloat(document.getElementById('height')?.value);
+            const gender = document.getElementById('gender')?.value;
+            const goal = document.getElementById('goal')?.value;
+
+            if (!age || !weight || !height || !gender) return null;
+
+            // Mifflin-St Jeor Equation
+            let bmr;
+            if (gender === 'male') {
+                bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+            } else if (gender === 'female') {
+                bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
+            } else {
+                // "other" — average of male and female formulae
+                bmr = (10 * weight) + (6.25 * height) - (5 * age) - 78;
+            }
+
+            // Activity multiplier (sedentary baseline)
+            const activityCalories = Math.round(bmr * 1.2);
+
+            // Goal adjustment
+            let goalAdj = 0;
+            let goalLabel = 'Goal adjustment';
+            if (goal === 'lose_weight') {
+                goalAdj = -500;
+                goalLabel = 'Weight loss deficit';
+            } else if (goal === 'gain_muscle') {
+                goalAdj = 300;
+                goalLabel = 'Muscle gain surplus';
+            } else if (goal === 'maintain_fitness') {
+                goalAdj = 0;
+                goalLabel = 'Maintenance (no change)';
+            } else if (goal === 'improve_health') {
+                goalAdj = 0;
+                goalLabel = 'Health focus (no change)';
+            }
+
+            const total = Math.max(800, activityCalories + goalAdj);
+
+            return {
+                bmr: Math.round(bmr),
+                activity: activityCalories,
+                goalAdj: goalAdj,
+                goalLabel: goalLabel,
+                total: Math.round(total)
+            };
+        }
+
+        function showBMRRecommendation() {
+            const result = calculateBMR();
+            const card = document.getElementById('bmr-recommendation');
+            if (!result || !card) return;
+
+            recommendedCalories = result.total;
+
+            document.getElementById('bmr-recommended-value').textContent = result.total;
+            document.getElementById('bmr-base').textContent = result.bmr + ' kcal';
+            document.getElementById('bmr-activity').textContent = result.activity + ' kcal';
+            document.getElementById('bmr-goal-label').textContent = result.goalLabel;
+            document.getElementById('bmr-goal-adj').textContent = (result.goalAdj >= 0 ? '+' : '') + result.goalAdj + ' kcal';
+            document.getElementById('bmr-total').textContent = result.total + ' kcal';
+
+            card.style.display = 'block';
+            // Re-render lucide icons for the new card elements
+            lucide.createIcons();
+
+            // Auto-fill if calorie field is empty
+            const calorieField = document.getElementById('calorie_target');
+            if (calorieField && !calorieField.value) {
+                calorieField.value = result.total;
+                document.getElementById('calorie-hint').innerHTML =
+                    '<i data-lucide="check-circle" class="inline-block w-3 h-3" style="color: #10b981;"></i> Auto-filled from your profile data';
+                lucide.createIcons();
+            }
+        }
+
+        function useRecommendedCalories() {
+            if (recommendedCalories) {
+                const calorieField = document.getElementById('calorie_target');
+                calorieField.value = recommendedCalories;
+                clearError('calorie_target');
+                document.getElementById('calorie-hint').innerHTML =
+                    '<i data-lucide="check-circle" class="inline-block w-3 h-3" style="color: #10b981;"></i> Using personalized recommendation';
+                lucide.createIcons();
+                // Smooth highlight effect
+                calorieField.style.borderColor = '#10b981';
+                calorieField.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)';
+                setTimeout(() => {
+                    calorieField.style.borderColor = '#e5e7eb';
+                    calorieField.style.boxShadow = '';
+                }, 1500);
+            }
+        }
 
         function updateProgress() {
             // Update progress dots
@@ -750,6 +963,11 @@
                 currentSlide++;
                 updateProgress();
 
+                // When entering slide 4, calculate & show BMR recommendation
+                if (currentSlide === 4) {
+                    showBMRRecommendation();
+                }
+
                 // Scroll to top of form
                 document.querySelector('.profile-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
@@ -803,6 +1021,8 @@
             if (goalField) {
                 goalField.addEventListener('change', function () {
                     if (this.value) clearError('goal');
+                    // Recalculate BMR when goal changes
+                    showBMRRecommendation();
                 });
             }
 

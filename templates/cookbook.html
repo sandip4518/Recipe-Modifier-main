@@ -440,11 +440,22 @@
                     continue;
                 }
                 
-                // Plain text — close any list and add as paragraph
-                closeList();
                 // Handle remaining inline bold
                 line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                html += `<p>${line}</p>`;
+                
+                if (currentSection && getSectionClass(currentSection) === 'section-instructions') {
+                    if (!inList || listType !== 'ol') {
+                        closeList();
+                        html += '<ol class="recipe-steps-list">';
+                        inList = true;
+                        listType = 'ol';
+                    }
+                    html += `<li>${line}</li>`;
+                } else {
+                    // Plain text — close any list and add as paragraph
+                    closeList();
+                    html += `<p>${line}</p>`;
+                }
             }
             
             closeSection();

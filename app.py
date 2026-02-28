@@ -450,6 +450,7 @@ def format_recipe_html(recipe_text):
     lines = recipe_text.split('\n')
     current_section = ''
     current_content = []
+    active_header = ''
     
     for line in lines:
         line = line.strip()
@@ -461,6 +462,7 @@ def format_recipe_html(recipe_text):
             if current_content:
                 html_parts.append(render_current_section(current_section, current_content))
             header_text = line.replace('**', '').strip()
+            active_header = header_text.lower()
             
             html_parts.append(f'<h6 class="text-success fw-bold mb-2">{header_text}</h6>')
             
@@ -497,11 +499,20 @@ def format_recipe_html(recipe_text):
             
         else:
             # Regular text
-            if current_section in ['list', 'numbered']:
-                html_parts.append(render_current_section(current_section, current_content))
-                current_section = 'text'
-                current_content = []
-            current_content.append(line.replace('**', '').strip())
+            is_instruction = any(k in active_header for k in ['instruction', 'step', 'direction', 'method'])
+            if is_instruction:
+                if current_section != 'numbered':
+                    if current_content:
+                        html_parts.append(render_current_section(current_section, current_content))
+                    current_section = 'numbered'
+                    current_content = []
+                current_content.append(line.replace('**', '').strip())
+            else:
+                if current_section in ['list', 'numbered']:
+                    html_parts.append(render_current_section(current_section, current_content))
+                    current_section = 'text'
+                    current_content = []
+                current_content.append(line.replace('**', '').strip())
     
     # Render final section
     if current_content:
@@ -519,8 +530,14 @@ def render_current_section(section_type, content):
     elif section_type == 'numbered':
         items_html = []
         for item in content:
-            items_html.append(f'<li class="mb-2">{item}</li>')
-        return f'<ol class="ms-3 mb-3">{"".join(items_html)}</ol>'
+            # Check if there's an inline bold title like "Text:" at start
+            if ':' in item and not item.startswith('<strong'):
+                parts = item.split(':', 1)
+                # Ensure the title part isn't too long to be a title
+                if len(parts[0]) < 35:
+                    item = f"<strong>{parts[0]}:</strong>{parts[1]}"
+            items_html.append(f'<li>{item}</li>')
+        return f'<ol class="recipe-steps-list">{"".join(items_html)}</ol>'
     else:
         return f'<p class="mb-3 lh-base">{" ".join(content)}</p>'
 
@@ -781,16 +798,55 @@ def get_profile_warnings(ingredients, user):
     # 3. Fitness Goal check (soft warnings)
     goal = getattr(user, 'goal', '')
     if goal:
-        high_calorie_keywords = ['sugar', 'butter', 'cream', 'oil', 'mayo', 'cheese', 'bacon', 'syrup', 'caramel', 'chocolate']
+        high_calorie_keywords = ['sugar', 'butter', 'cream', 'oil', 'mayo', 'cheese', 'bacon', 'syrup', 'caramel', 'chocolate', 'ghee', 'lard']
+        low_protein_keywords = ['rice', 'pasta', 'bread', 'noodle', 'potato', 'flour', 'sugar', 'syrup', 'jam']
+        high_protein_keywords = ['chicken', 'fish', 'egg', 'paneer', 'tofu', 'lentil', 'dal', 'bean', 'meat', 'whey', 'yogurt', 'milk', 'cheese', 'turkey', 'salmon', 'tuna', 'shrimp']
+        processed_keywords = ['processed', 'canned', 'instant', 'refined', 'white bread', 'white rice', 'white flour', 'maida', 'soda', 'artificial', 'preservative']
+
         if goal == 'lose_weight':
             found_high_cal = [i for i in ingredients if any(k in i.lower() for k in high_calorie_keywords)]
-            if len(found_high_cal) > 0:
+            if found_high_cal:
                 warnings.append({
                     'severity': 'warning',
-                    'icon': 'info',
+                    'icon': 'flame',
                     'title': 'Goal Reminder: Lose Weight',
-                    'message': 'These ingredients are high in calories. Consider using moderation to meet your weight loss goals.',
+                    'message': 'These ingredients are calorie-dense. Consider smaller portions or lighter alternatives to stay within your calorie budget.',
                     'ingredients': found_high_cal
+                })
+
+        elif goal == 'gain_muscle':
+            # Check if recipe lacks protein sources
+            has_protein = any(any(k in i.lower() for k in high_protein_keywords) for i in ingredients)
+            found_carb_heavy = [i for i in ingredients if any(k in i.lower() for k in low_protein_keywords)]
+            if not has_protein:
+                warnings.append({
+                    'severity': 'warning',
+                    'icon': 'dumbbell',
+                    'title': 'Goal Reminder: Gain Muscle',
+                    'message': 'This recipe appears low in protein. Consider adding chicken, paneer, tofu, eggs, or lentils to support muscle growth.',
+                    'ingredients': found_carb_heavy[:5] if found_carb_heavy else []
+                })
+
+        elif goal == 'maintain_fitness':
+            found_high_cal = [i for i in ingredients if any(k in i.lower() for k in high_calorie_keywords)]
+            if len(found_high_cal) >= 3:
+                warnings.append({
+                    'severity': 'warning',
+                    'icon': 'scale',
+                    'title': 'Goal Reminder: Maintain Fitness',
+                    'message': 'This recipe has several calorie-dense ingredients. Balance with vegetables or reduce portions to maintain your current weight.',
+                    'ingredients': found_high_cal
+                })
+
+        elif goal == 'improve_health':
+            found_processed = [i for i in ingredients if any(k in i.lower() for k in processed_keywords)]
+            if found_processed:
+                warnings.append({
+                    'severity': 'warning',
+                    'icon': 'heart',
+                    'title': 'Goal Reminder: Improve Health',
+                    'message': 'These ingredients are processed or refined. Swap with whole-food alternatives for better nutritional value.',
+                    'ingredients': found_processed
                 })
                 
     return warnings
@@ -857,6 +913,21 @@ def check_ingredients_route():
         else:
             modified_ingredients.append(ingredient)
 
+    # Build user profile for personalized recipe notes (from in-memory current_user, no DB calls)
+    user_profile = None
+    if current_user.is_authenticated:
+        user_profile = {
+            'age': getattr(current_user, 'age', None),
+            'gender': getattr(current_user, 'gender', None),
+            'calorie_target': getattr(current_user, 'calorie_target', None),
+            'goal': getattr(current_user, 'goal', None),
+            'diet_type': getattr(current_user, 'diet_type', None),
+            'allergies': getattr(current_user, 'allergies', None),
+        }
+
+    # Get structured personalized notes separately (no DB call)
+    personalized_notes = ml_service.get_personalized_notes(user_profile)
+
     # Try to serve from cache first to avoid a slow LLM call
     ingredients_key = ",".join(sorted([i.strip().lower() for i in modified_ingredients if i and i.strip()]))
     try:
@@ -867,6 +938,7 @@ def check_ingredients_route():
             # Generate modified recipe via ML Service
             recipe = generate_recipe(ingredients, safe, replacements, condition, recipe_name)
             try:
+                # Cache the base recipe
                 get_generated_recipes().update_one(
                     {"condition": condition, "ingredients_key": ingredients_key},
                     {"$set": {"recipe": recipe, "updated_at": datetime.now()}},
@@ -877,7 +949,7 @@ def check_ingredients_route():
                 pass
     except Exception as e:
         print(f"Error checking cache: {e}")
-        # Generate modified recipe via Gemini
+        # Generate modified recipe via Gemini (or ML Service)
         recipe = generate_recipe(ingredients, safe, replacements, condition, recipe_name)
     
     # Skip synchronous nutrition calculation - will be loaded via AJAX for faster initial page load
@@ -938,6 +1010,7 @@ def check_ingredients_route():
                          recipe_name=recipe_name,
                          profile_warnings=profile_warnings,
                          is_already_saved=is_already_saved,
+                         personalized_notes=personalized_notes,
                          moment=datetime.now().strftime('%B %d, %Y at %I:%M %p'))
 
 @app.route('/generate_report/<patient_id>')
@@ -1151,9 +1224,19 @@ def get_nutrition_data():
         if not ingredients:
             return jsonify({'nutrition': None, 'warnings': []})
         
+        # Get user's calorie target for personalized daily value percentages (from memory, no DB call)
+        user_calorie_target = None
+        if current_user.is_authenticated:
+            user_calorie_target = getattr(current_user, 'calorie_target', None)
+        
         # Calculate nutrition using nutrition service
-        raw_nutrition = nutrition_service.calculate_recipe_nutrition(ingredients)
+        raw_nutrition = nutrition_service.calculate_recipe_nutrition(ingredients, user_calorie_target=user_calorie_target)
         formatted_nutrition = nutrition_service.format_nutrition_summary(raw_nutrition)
+        
+        # Include personalization flag in formatted output
+        formatted_nutrition['daily_values_personalized'] = raw_nutrition.get('daily_values_personalized', False)
+        if user_calorie_target:
+            formatted_nutrition['user_calorie_target'] = user_calorie_target
         
         # Get condition-specific warnings
         warnings = nutrition_service.get_condition_warnings(raw_nutrition, condition)
@@ -1452,6 +1535,24 @@ def profile():
         if current_user.calorie_target and current_user.calorie_target > 0:
             calorie_percentage = min(round((today_calories / current_user.calorie_target) * 100), 100)
         
+        # Calculate BMR using Mifflin-St Jeor equation (no extra DB calls)
+        bmr = None
+        recommended_calories = None
+        if current_user.age and current_user.weight and current_user.height and current_user.gender:
+            gender = current_user.gender.lower() if current_user.gender else ''
+            if gender == 'male':
+                bmr = round((10 * current_user.weight) + (6.25 * current_user.height) - (5 * current_user.age) + 5)
+            elif gender == 'female':
+                bmr = round((10 * current_user.weight) + (6.25 * current_user.height) - (5 * current_user.age) - 161)
+            else:
+                bmr = round((10 * current_user.weight) + (6.25 * current_user.height) - (5 * current_user.age) - 78)
+            
+            # Activity-adjusted (sedentary baseline ×1.2) + goal adjustment
+            activity_cal = round(bmr * 1.2)
+            goal = current_user.goal or ''
+            goal_adj = -500 if goal == 'lose_weight' else (300 if goal == 'gain_muscle' else 0)
+            recommended_calories = max(800, activity_cal + goal_adj)
+
     except Exception as e:
         print(f"Error getting user profile data: {e}")
         user_entries = []
@@ -1463,6 +1564,8 @@ def profile():
         calorie_percentage = 0
         bmi = None
         bmi_category = None
+        bmr = None
+        recommended_calories = None
     
     # Create forms
     profile_form = ProfileUpdateForm()
@@ -1482,7 +1585,9 @@ def profile():
                          today_calories=today_calories,
                          calorie_percentage=calorie_percentage,
                          bmi=bmi,
-                         bmi_category=bmi_category)
+                         bmi_category=bmi_category,
+                         bmr=bmr,
+                         recommended_calories=recommended_calories)
 
 @app.route('/update_profile', methods=['POST'])
 @login_required

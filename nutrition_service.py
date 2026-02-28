@@ -185,7 +185,7 @@ class NutritionService:
         self._cache[cache_key] = nutrition
         return nutrition
     
-    def calculate_recipe_nutrition(self, ingredients: list, servings: int = 4) -> dict:
+    def calculate_recipe_nutrition(self, ingredients: list, servings: int = 4, user_calorie_target: int = None) -> dict:
         """
         Calculate total nutrition for a list of ingredients.
         Uses concurrent requests for faster processing.
@@ -193,6 +193,7 @@ class NutritionService:
         Args:
             ingredients: List of ingredient names
             servings: Number of servings the recipe makes
+            user_calorie_target: User's personal calorie target (optional, for personalized DV%)
             
         Returns:
             Dictionary with total and per-serving nutrition
@@ -236,10 +237,25 @@ class NutritionService:
         for key, value in totals.items():
             per_serving[key] = round(value / servings, 1) if servings > 0 else value
         
+        # Build personalized daily values if user has a calorie target
+        daily_values = dict(self.DAILY_VALUES)
+        is_personalized = False
+        if user_calorie_target and user_calorie_target > 0 and user_calorie_target != 2000:
+            # Scale macronutrient DVs proportionally to user's calorie target
+            scale = user_calorie_target / 2000.0
+            daily_values['calories'] = user_calorie_target
+            daily_values['protein'] = round(self.DAILY_VALUES['protein'] * scale, 1)
+            daily_values['total_fat'] = round(self.DAILY_VALUES['total_fat'] * scale, 1)
+            daily_values['carbohydrates'] = round(self.DAILY_VALUES['carbohydrates'] * scale, 1)
+            daily_values['sugar'] = round(self.DAILY_VALUES['sugar'] * scale, 1)
+            daily_values['fiber'] = round(self.DAILY_VALUES['fiber'] * scale, 1)
+            daily_values['saturated_fat'] = round(self.DAILY_VALUES['saturated_fat'] * scale, 1)
+            is_personalized = True
+
         # Calculate daily value percentages
         daily_percentages = {}
         for key, value in per_serving.items():
-            dv = self.DAILY_VALUES.get(key, 0)
+            dv = daily_values.get(key, 0)
             if dv > 0:
                 daily_percentages[key] = round((value / dv) * 100, 1)
             else:
@@ -249,6 +265,7 @@ class NutritionService:
             'totals': totals,
             'per_serving': per_serving,
             'daily_percentages': daily_percentages,
+            'daily_values_personalized': is_personalized,
             'servings': servings,
             'ingredients_analyzed': len(valid_ingredients),
             'ingredients_found': found_count,

@@ -141,6 +141,30 @@
                                 </div>
                             </div>
                             {% endif %}
+                            {% if bmr %}
+                            <div class="info-item">
+                                <div class="icon"><i data-lucide="zap" class="w-4 h-4"></i></div>
+                                <div class="content">
+                                    <h4>Base Metabolic Rate</h4>
+                                    <div class="value">{{ bmr }} <span style="font-size: 0.875rem; color: #6b7280;">kcal/day</span></div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if recommended_calories %}
+                            <div class="info-item">
+                                <div class="icon"><i data-lucide="sparkles" class="w-4 h-4"></i></div>
+                                <div class="content">
+                                    <h4>Recommended Calories</h4>
+                                    <div class="value">{{ recommended_calories }} <span style="font-size: 0.875rem; color: #6b7280;">kcal/day</span>
+                                        {% if current_user.calorie_target and current_user.calorie_target != recommended_calories %}
+                                        <span style="font-size: 0.75rem; color: #f59e0b; display: block; margin-top: 0.25rem;">
+                                            Your target ({{ current_user.calorie_target }}) differs by {{ (current_user.calorie_target - recommended_calories)|abs }} kcal
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
                             <div class="info-item">
                                 <div class="icon"><i data-lucide="utensils" class="w-4 h-4"></i></div>
                                 <div class="content">

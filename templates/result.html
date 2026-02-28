@@ -423,6 +423,33 @@
                     </div>
                 </div>
 
+                <!-- Personalized Notes (Extracted) -->
+                {% if personalized_notes %}
+                <div class="results-card" id="personalized-notes-section">
+                    <div class="card-header info" style="background: linear-gradient(135deg, #0ea5e9, #2563eb); color: white;">
+                        <h3 style="margin: 0; display: flex; align-items: center;"><span class="header-icon" style="background: rgba(255,255,255,0.2);"><i data-lucide="sparkles" class="w-6 h-6"></i></span> Personalized Notes</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert-box primary" style="margin-bottom: 1.25rem;">
+                            <span><i data-lucide="user-check" class="inline-block w-4 h-4 mr-1"></i> We've customized this recipe recommendation based on your profile:</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            {% for note in personalized_notes %}
+                            <div class="profile-alert-card info" style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #3b82f6;">
+                                <div class="pa-icon-wrap" style="background: #e0f2fe; color: #0284c7;">
+                                    <i data-lucide="{{ note.icon }}" class="w-5 h-5"></i>
+                                </div>
+                                <div class="pa-content">
+                                    <div class="pa-title" style="color: #0f172a;">{{ note.title }}</div>
+                                    <div class="pa-message" style="color: #475569;">{{ note.text | safe }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Modified Recipe -->
                 <div class="results-card">
                     <div class="card-header primary" style="display: flex; justify-content: space-between; align-items: center;">
@@ -709,11 +736,14 @@
             });
             html += '</div></div>';
 
-            // Footer (compact)
+            // Footer (compact) — show personalized badge if DV% is based on user's calorie target
+            const isPersonalized = nutrition.daily_values_personalized;
+            const userTarget = nutrition.user_calorie_target;
             html += `<div class="nutrition-compact-footer">
                 <span class="footer-item"><i data-lucide="database" class="w-3 h-3"></i> USDA FoodData</span>
                 <span class="footer-item">${nutrition.ingredients_found}/${nutrition.ingredients_analyzed} matched</span>
                 <span class="footer-item">${nutrition.servings} servings</span>
+                ${isPersonalized ? `<span class="footer-item" style="color: #00b0b0; font-weight: 600;"><i data-lucide="sparkles" class="w-3 h-3"></i> DV% based on your ${userTarget} kcal target</span>` : ''}
             </div>`;
 
             return html;
@@ -757,7 +787,7 @@
 
         async function toggleResultFavorite(entryId) {
             const btn = document.getElementById('favoriteBtn');
-            const icon = btn.querySelector('i');
+            const icon = btn.querySelector('svg') || btn.querySelector('i');
             const text = btn.querySelector('.btn-text');
             
             try {
@@ -800,7 +830,7 @@
         async function confirmReplace() {
             if (!pendingEntryId) return;
             const btn = document.getElementById('favoriteBtn');
-            const icon = btn.querySelector('i');
+            const icon = btn.querySelector('svg') || btn.querySelector('i');
             const text = btn.querySelector('.btn-text');
 
             try {
@@ -874,8 +904,9 @@
                 if (data.success) {
                     showToast(`Recipe saved to ${category}!`, 'success');
                     const favBtn = document.getElementById('favoriteBtn');
+                    const favIcon = favBtn.querySelector('svg') || favBtn.querySelector('i');
                     favBtn.classList.add('active');
-                    favBtn.querySelector('i').classList.add('fill-current');
+                    if (favIcon) favIcon.classList.add('fill-current');
                     favBtn.querySelector('.btn-text').innerText = 'Saved';
                 }
             } catch (error) {

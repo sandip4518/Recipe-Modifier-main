@@ -187,7 +187,62 @@ class MLService:
             return best_recipe_key[0]
         return None
 
-    def get_recipe_details(self, recipe_key, condition):
+    def get_personalized_notes(self, user_profile):
+        """Build structured personalized notes section from user profile."""
+        if not user_profile:
+            return []
+        
+        notes = []
+        
+        # Calorie budget context
+        calorie_target = user_profile.get('calorie_target')
+        if calorie_target and calorie_target > 0:
+            notes.append({
+                'icon': 'target',
+                'title': 'Daily Calories',
+                'text': f"Your daily calorie target is <strong>{calorie_target} kcal</strong>. Plan portions to stay within your budget."
+            })
+        
+        # Goal-specific tips
+        goal = user_profile.get('goal', '')
+        goal_tips = {
+            'lose_weight': {'icon': 'trending-down', 'title': 'Goal: Lose Weight', 'text': 'Consider smaller portions and reduce oil/butter where possible.'},
+            'gain_muscle': {'icon': 'dumbbell', 'title': 'Goal: Gain Muscle', 'text': 'Add extra protein sources like paneer, tofu, or lean meat to boost intake.'},
+            'maintain_fitness': {'icon': 'scale', 'title': 'Goal: Maintain Fitness', 'text': 'This recipe fits well into a balanced maintenance diet.'},
+            'improve_health': {'icon': 'heart', 'title': 'Goal: Improve Health', 'text': 'Focus on fresh ingredients and minimal processing for best results.'}
+        }
+        if goal in goal_tips:
+            notes.append(goal_tips[goal])
+        
+        # Diet type reminder
+        diet_type = user_profile.get('diet_type', '')
+        if diet_type:
+            notes.append({
+                'icon': 'leaf',
+                'title': 'Dietary Preference',
+                'text': f"<strong>{diet_type.title()}</strong> — Ensure all ingredients align with your dietary choice."
+            })
+        
+        # Allergy reminder
+        allergies = user_profile.get('allergies', '')
+        if allergies:
+            notes.append({
+                'icon': 'alert-circle',
+                'title': 'Allergy Alert',
+                'text': f"You've reported allergies to <strong>{allergies}</strong>. Double-check all ingredients."
+            })
+        
+        # Age-based tips
+        age = user_profile.get('age')
+        if age:
+            if age >= 60:
+                notes.append({'icon': 'info', 'title': 'Age Tip', 'text': 'At your age, calcium and vitamin D-rich foods are especially important.'})
+            elif age <= 18:
+                notes.append({'icon': 'info', 'title': 'Age Tip', 'text': 'Growing bodies need balanced nutrition — don\'t skip protein and healthy fats.'})
+        
+        return notes
+
+    def get_recipe_details(self, recipe_key, condition, user_profile=None):
         """Get recipe details (ingredients and instructions) for a condition"""
         if recipe_key not in self.recipe_data:
             return None
@@ -224,7 +279,7 @@ Serve warm and enjoy your healthy meal!"""
         
         return recipe_md
 
-    def generate_recipe_instructions(self, original_ingredients, modified_ingredients, condition, harmful_ingredients=None, recipe_name=None):
+    def generate_recipe_instructions(self, original_ingredients, modified_ingredients, condition, harmful_ingredients=None, recipe_name=None, user_profile=None):
         """Main method to provide recipe content, replacing Gemini's direct instruction generation"""
         
         # 1. Try to find a match by recipe name if provided
@@ -239,12 +294,12 @@ Serve warm and enjoy your healthy meal!"""
             pass
             
         if recipe_key:
-            return self.get_recipe_details(recipe_key, condition)
+            return self.get_recipe_details(recipe_key, condition, user_profile)
             
         # 3. Fallback: Generic instructions if no model match
-        return self._fallback_recipe_generation(modified_ingredients, condition)
+        return self._fallback_recipe_generation(modified_ingredients, condition, user_profile)
 
-    def _fallback_recipe_generation(self, ingredients, condition):
+    def _fallback_recipe_generation(self, ingredients, condition, user_profile=None):
         ingredients_str = "\n".join([f"- {i}" for i in ingredients])
         return f"""**Health Benefits**
 This recipe is adapted to be safer for {condition.replace('_', ' ').title()}.

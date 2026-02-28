@@ -4451,3 +4451,58 @@ section {
     cursor: pointer;
     font-family: inherit;
 }
+
+/* ============================================
+   RECIPE STEPS LIST (MODAL & RESULTS)
+   DESIGNED FOR NUMBERED CIRCULAR BADGES
+   ============================================ */
+.recipe-steps-list {
+    list-style: none; /* Remove default styling */
+    padding-left: 0;
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+    counter-reset: step-counter; /* Init counter */
+    display: flex;
+    flex-direction: column;
+}
+
+.recipe-steps-list li {
+    counter-increment: step-counter;
+    position: relative;
+    padding-left: 3.25rem; /* Indent space reserved for the circle badge */
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #f1f5f9; /* Subtle divider between steps */
+    color: var(--gray-800);
+    font-size: 0.95rem;
+    line-height: 1.65;
+}
+
+.recipe-steps-list li:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.recipe-steps-list li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: -0.15rem; /* Perfectly align circle with first line text */
+    width: 2.1rem;
+    height: 2.1rem;
+    background-color: #2b9dd6; /* Flat blue color closely matching the reference screenshot */
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* Slight elevation */
+}
+
+.recipe-steps-list li strong {
+    color: var(--gray-900);
+    font-weight: 700;
+}
