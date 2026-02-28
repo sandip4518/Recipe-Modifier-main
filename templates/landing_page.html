@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Health-Aware Recipe Modifier - Instantly analyze recipes and get healthier alternatives based on your health condition using AI.">
+    <title>Health-Aware Recipe Modifier | Eat Smart. Cook Safe.</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <!-- NAVIGATION -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <a href="#" class="logo">
+                <span class="logo-icon"><i data-lucide="salad" class="lucide-icon"></i></span>
+                <span class="logo-text">HealthRecipe<span class="logo-accent">AI</span></span>
+            </a>
+            <ul class="nav-links" id="nav-links">
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#conditions">Conditions</a></li>
+                <li><a href="#why-us">Why Us</a></li>
+                <li><a href="{{ url_for('login') }}" class="btn btn-login">Login</a></li>
+                <li><a href="{{ url_for('register') }}" class="btn btn-register">Register</a></li>
+            </ul>
+            <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle navigation">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section class="hero" id="hero">
+        <div class="hero-bg">
+            <div class="hero-gradient"></div>
+            <div class="hero-pattern"></div>
+        </div>
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">Make Any Recipe Healthy<br><span class="gradient-text">in Seconds.</span></h1>
+                <p class="hero-subtitle">Stop worrying about ingredients. Our AI instantly adapts your favorite meals to
+                    your health needs.</p>
+                <div class="hero-buttons">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg"><span class="btn-icon"><i
+                                data-lucide="chef-hat" class="lucide-icon"></i></span>Start Modifying Free</a>
+                    <a href="#sample-output" class="btn btn-secondary btn-lg"><span class="btn-icon"><i
+                                data-lucide="clipboard-list" class="lucide-icon"></i></span>View Sample Report</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number" id="stat-recipes">
+                            <span class="stat-loading">...</span>
+                        </span>
+                        <span class="stat-label">Recipes Modified</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number" id="stat-users">
+                            <span class="stat-loading">...</span>
+                        </span>
+                        <span class="stat-label">Users</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number" id="stat-conditions">
+                            <span class="stat-loading">...</span>
+                        </span>
+                        <span class="stat-label">Health Conditions</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="hero-card">
+                    <div class="card-header">
+                        <div class="card-dots"><span></span><span></span><span></span></div><span
+                            class="card-title">Recipe Analysis</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="analysis-item warning"><span class="item-icon"><i data-lucide="alert-triangle"
+                                    class="lucide-icon"></i></span>
+                            <div class="item-text"><span class="item-label">High Sodium Detected</span><span
+                                    class="item-desc">Salt: 2000mg</span></div>
+                        </div>
+                        <div class="analysis-item success"><span class="item-icon"><i data-lucide="check-circle"
+                                    class="lucide-icon"></i></span>
+                            <div class="item-text"><span class="item-label">Suggested Alternative</span><span
+                                    class="item-desc">Himalayan Pink Salt: 500mg</span></div>
+                        </div>
+                        <div class="analysis-item warning"><span class="item-icon"><i data-lucide="alert-triangle"
+                                    class="lucide-icon"></i></span>
+                            <div class="item-text"><span class="item-label">High Sugar Content</span><span
+                                    class="item-desc">White Sugar: 150g</span></div>
+                        </div>
+                        <div class="analysis-item success"><span class="item-icon"><i data-lucide="check-circle"
+                                    class="lucide-icon"></i></span>
+                            <div class="item-text"><span class="item-label">Healthy Substitute</span><span
+                                    class="item-desc">Stevia: 30g</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="floating-badge badge-1"><i data-lucide="leaf" class="lucide-icon"></i> Healthy</div>
+                <div class="floating-badge badge-2"><i data-lucide="microscope" class="lucide-icon"></i> AI Analyzed
+                </div>
+                <div class="floating-badge badge-3"><i data-lucide="bar-chart-3" class="lucide-icon"></i> Report Ready
+                </div>
+            </div>
+        </div>
+        <div class="hero-wave"><svg viewBox="0 0 1440 120" fill="none">
+                <path
+                    d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H0Z"
+                    fill="white" />
+            </svg></div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="section-header"><span class="section-badge">Simple Process</span>
+                <h2 class="section-title">How It Works</h2>
+                <p class="section-subtitle">Get healthier recipes in just 4 simple steps</p>
+            </div>
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-number">01</div>
+                    <div class="step-icon"><i data-lucide="file-text" class="lucide-icon"></i></div>
+                    <h3 class="step-title">Enter Your Recipe</h3>
+                    <p class="step-desc">Simply paste or type your recipe ingredients into our easy-to-use interface.
+                    </p>
+                </div>
+                <div class="step-connector"><svg viewBox="0 0 100 20" fill="none">
+                        <path d="M0 10 H90 M80 5 L90 10 L80 15" stroke="currentColor" stroke-width="2" />
+                    </svg></div>
+                <div class="step-card">
+                    <div class="step-number">02</div>
+                    <div class="step-icon"><i data-lucide="hospital" class="lucide-icon"></i></div>
+                    <h3 class="step-title">Select Health Condition</h3>
+                    <p class="step-desc">Choose from diabetes, heart disease, allergies, and other supported conditions.
+                    </p>
+                </div>
+                <div class="step-connector"><svg viewBox="0 0 100 20" fill="none">
+                        <path d="M0 10 H90 M80 5 L90 10 L80 15" stroke="currentColor" stroke-width="2" />
+                    </svg></div>
+                <div class="step-card">
+                    <div class="step-number">03</div>
+                    <div class="step-icon"><i data-lucide="bot" class="lucide-icon"></i></div>
+                    <h3 class="step-title">AI Analyzes Ingredients</h3>
+                    <p class="step-desc">Our Gemini AI scans each ingredient for potential health risks based on your
+                        condition.</p>
+                </div>
+                <div class="step-connector"><svg viewBox="0 0 100 20" fill="none">
+                        <path d="M0 10 H90 M80 5 L90 10 L80 15" stroke="currentColor" stroke-width="2" />
+                    </svg></div>
+                <div class="step-card">
+                    <div class="step-number">04</div>
+                    <div class="step-icon"><i data-lucide="file-check" class="lucide-icon"></i></div>
+                    <h3 class="step-title">Get Modified Recipe</h3>
+                    <p class="step-desc">Receive a healthier recipe with substitutes and a downloadable PDF health
+                        report.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- KEY FEATURES -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header"><span class="section-badge">Powerful Features</span>
+                <h2 class="section-title">Everything You Need</h2>
+                <p class="section-subtitle">Advanced AI-powered tools for healthier cooking</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <div class="feature-icon"><i data-lucide="search" class="lucide-icon"></i></div>
+                    </div>
+                    <h3 class="feature-title">Ingredient Analysis Engine</h3>
+                    <p class="feature-desc">Deep analysis of every ingredient to identify potential health risks based
+                        on your specific condition.</p>
+                </div>
+                <div class="feature-card featured">
+                    <div class="feature-badge">Most Popular</div>
+                    <div class="feature-icon-wrap">
+                        <div class="feature-icon"><i data-lucide="brain" class="lucide-icon"></i></div>
+                    </div>
+                    <h3 class="feature-title">AI-Powered Alternatives</h3>
+                    <p class="feature-desc">Gemini AI suggests the best healthy substitutes that maintain taste while
+                        improving nutrition.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <div class="feature-icon"><i data-lucide="chef-hat" class="lucide-icon"></i></div>
+                    </div>
+                    <h3 class="feature-title">Personalized Recipe Generation</h3>
+                    <p class="feature-desc">Get a completely rewritten recipe tailored to your health needs with
+                        step-by-step instructions.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <div class="feature-icon"><i data-lucide="bar-chart-3" class="lucide-icon"></i></div>
+                    </div>
+                    <h3 class="feature-title">PDF Health Report</h3>
+                    <p class="feature-desc">Download a comprehensive PDF report with all analysis details,
+                        substitutions, and the modified recipe.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <div class="feature-icon"><i data-lucide="zap" class="lucide-icon"></i></div>
+                    </div>
+                    <h3 class="feature-title">Fast & Secure Processing</h3>
+                    <p class="feature-desc">Lightning-fast analysis with enterprise-grade security. Your data stays
+                        private and protected.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SUPPORTED CONDITIONS -->
+    <section class="conditions" id="conditions">
+        <div class="container">
+            <div class="section-header"><span class="section-badge">Health Conditions</span>
+                <h2 class="section-title">Tailored For Your Needs</h2>
+                <p class="section-subtitle">Our AI understands various health conditions and dietary requirements</p>
+            </div>
+            <div class="conditions-grid">
+                <div class="condition-card">
+                    <div class="condition-icon"><i data-lucide="droplet" class="lucide-icon"></i></div>
+                    <h3 class="condition-title">Diabetes</h3>
+                    <p class="condition-desc">Low glycemic alternatives and sugar substitutes for blood sugar
+                        management.</p>
+                </div>
+                <div class="condition-card">
+                    <div class="condition-icon"><i data-lucide="heart" class="lucide-icon"></i></div>
+                    <h3 class="condition-title">High Blood Pressure</h3>
+                    <p class="condition-desc">Low sodium options and heart-healthy ingredient swaps.</p>
+                </div>
+                <div class="condition-card">
+                    <div class="condition-icon"><i data-lucide="heart-pulse" class="lucide-icon"></i></div>
+                    <h3 class="condition-title">Heart Disease</h3>
+                    <p class="condition-desc">Reduced saturated fats and cholesterol-lowering alternatives.</p>
+                </div>
+                <div class="condition-card">
+                    <div class="condition-icon"><i data-lucide="wheat" class="lucide-icon"></i></div>
+                    <h3 class="condition-title">Gluten & Lactose Intolerance</h3>
+                    <p class="condition-desc">Gluten-free and dairy-free substitutes that taste great.</p>
+                </div>
+                <div class="condition-card">
+                    <div class="condition-icon"><i data-lucide="alert-triangle" class="lucide-icon"></i></div>
+                    <h3 class="condition-title">Food Allergies</h3>
+                    <p class="condition-desc">Detection and replacement of common allergens like nuts, eggs, and soy.
+                    </p>
+                </div>
+                <div class="condition-card">
+                    <div class="condition-icon"><i data-lucide="scale" class="lucide-icon"></i></div>
+                    <h3 class="condition-title">Obesity & High Cholesterol</h3>
+                    <p class="condition-desc">Low-calorie and low-fat alternatives for weight management.</p>
+                </div>
+            </div>
+            <div class="conditions-cta"><span class="coming-soon"><i data-lucide="rocket" class="lucide-icon"></i> More
+                    conditions coming soon...</span></div>
+        </div>
+    </section>
+
+    <!-- WHY CHOOSE US -->
+    <section class="why-us" id="why-us">
+        <div class="container">
+            <div class="why-us-content">
+                <div class="why-us-text">
+                    <span class="section-badge">Why Choose Us</span>
+                    <h2 class="section-title">The Smarter Way to Eat Healthy</h2>
+                    <p class="section-subtitle">Join thousands who have transformed their cooking habits with our
+                        AI-powered tool.</p>
+                    <div class="benefits-list">
+                        <div class="benefit-item">
+                            <div class="benefit-icon"><i data-lucide="clock" class="lucide-icon"></i></div>
+                            <div class="benefit-content">
+                                <h4>Saves Time for Diet Planning</h4>
+                                <p>No more hours of research. Get instant recommendations tailored to your health needs.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <div class="benefit-icon"><i data-lucide="target" class="lucide-icon"></i></div>
+                            <div class="benefit-content">
+                                <h4>AI-Backed Recommendations</h4>
+                                <p>Powered by Google's Gemini AI for accurate, science-based ingredient analysis.</p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <div class="benefit-icon"><i data-lucide="palette" class="lucide-icon"></i></div>
+                            <div class="benefit-content">
+                                <h4>Simple & Beginner-Friendly</h4>
+                                <p>Intuitive interface designed for everyone, from cooking novices to experienced chefs.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <div class="benefit-icon"><i data-lucide="hospital" class="lucide-icon"></i></div>
+                            <div class="benefit-content">
+                                <h4>Designed for Real Medical Needs</h4>
+                                <p>Created with input from nutritionists to address genuine dietary restrictions.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="why-us-visual">
+                    <div class="visual-card">
+                        <div class="visual-header"><span class="visual-title">Health Score Improvement</span></div>
+                        <div class="chart-container">
+                            <div class="chart-bar">
+                                <div class="bar-fill" style="--fill: 35%;"><span class="bar-label">Before</span></div>
+                            </div>
+                            <div class="chart-bar">
+                                <div class="bar-fill bar-success" style="--fill: 92%;"><span
+                                        class="bar-label">After</span></div>
+                            </div>
+                        </div>
+                        <div class="chart-legend"><span class="legend-item"><span class="legend-dot"></span> Recipe
+                                Health Score</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SAMPLE OUTPUT PREVIEW -->
+    <section class="sample-output" id="sample-output">
+        <div class="container">
+            <div class="section-header"><span class="section-badge">Preview</span>
+                <h2 class="section-title">See It In Action</h2>
+                <p class="section-subtitle">Here's what your health report will look like</p>
+            </div>
+            <div class="output-grid">
+                <div class="output-card">
+                    <div class="output-header"><span class="output-icon"><i data-lucide="alert-triangle"
+                                class="lucide-icon"></i></span>
+                        <h3>Harmful Ingredients Detected</h3>
+                    </div>
+                    <div class="output-content">
+                        <div class="ingredient-item harmful"><span class="ing-name">White Sugar (150g)</span><span
+                                class="ing-tag">High Glycemic</span></div>
+                        <div class="ingredient-item harmful"><span class="ing-name">Butter (100g)</span><span
+                                class="ing-tag">High Saturated Fat</span></div>
+                        <div class="ingredient-item harmful"><span class="ing-name">Table Salt (10g)</span><span
+                                class="ing-tag">High Sodium</span></div>
+                    </div>
+                </div>
+                <div class="output-card">
+                    <div class="output-header"><span class="output-icon"><i data-lucide="check-circle"
+                                class="lucide-icon"></i></span>
+                        <h3>Suggested Substitutes</h3>
+                    </div>
+                    <div class="output-content">
+                        <div class="ingredient-item healthy"><span class="ing-name">Stevia (30g)</span><span
+                                class="ing-tag">Low Glycemic</span></div>
+                        <div class="ingredient-item healthy"><span class="ing-name">Olive Oil (60ml)</span><span
+                                class="ing-tag">Healthy Fats</span></div>
+                        <div class="ingredient-item healthy"><span class="ing-name">Himalayan Salt (3g)</span><span
+                                class="ing-tag">Reduced Sodium</span></div>
+                    </div>
+                </div>
+                <div class="output-card recipe-card">
+                    <div class="output-header"><span class="output-icon"><i data-lucide="file-text"
+                                class="lucide-icon"></i></span>
+                        <h3>Generated Healthy Recipe</h3>
+                    </div>
+                    <div class="output-content">
+                        <div class="recipe-preview">
+                            <h4>Healthy Chocolate Chip Cookies</h4>
+                            <p class="recipe-meta"><i data-lucide="clock" class="lucide-icon-sm"></i> 25 mins | <i
+                                    data-lucide="cookie" class="lucide-icon-sm"></i> 12 servings | <i
+                                    data-lucide="flame" class="lucide-icon-sm"></i> 120 cal</p>
+                            <div class="recipe-steps">
+                                <p>1. Preheat oven to 350°F...</p>
+                                <p>2. Mix almond flour with stevia...</p>
+                                <p class="recipe-more">+ 4 more steps</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="output-card pdf-card">
+                    <div class="output-header"><span class="output-icon"><i data-lucide="file"
+                                class="lucide-icon"></i></span>
+                        <h3>PDF Report Preview</h3>
+                    </div>
+                    <div class="output-content">
+                        <div class="pdf-preview">
+                            <div class="pdf-mock">
+                                <div class="pdf-header-mock"></div>
+                                <div class="pdf-section-mock"></div>
+                                <div class="pdf-section-mock short"></div>
+                            </div><span class="pdf-label">Downloadable Health Report</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FINAL CTA -->
+    <section class="final-cta" id="final-cta">
+        <div class="container">
+            <div class="cta-content">
+                <div class="cta-icon"><i data-lucide="leaf" class="lucide-icon-lg"></i></div>
+                <h2 class="cta-title">Start Cooking Healthier Today</h2>
+                <p class="cta-subtitle">Transform your favorite recipes into healthier versions with the power of AI.
+                    It's free to get started!</p>
+                <a href="{{ url_for('index') }}" class="btn btn-primary btn-xl"><span class="btn-icon"><i
+                            data-lucide="rocket" class="lucide-icon"></i></span>Get Started Free</a>
+                <p class="cta-note">No credit card required • Instant access • Free forever</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer" id="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="#" class="logo"><span class="logo-icon"><i data-lucide="salad"
+                                class="lucide-icon"></i></span><span class="logo-text">HealthRecipe<span
+                                class="logo-accent">AI</span></span></a>
+                    <p class="footer-desc">Making healthy cooking accessible for everyone through the power of
+                        artificial intelligence.</p>
+                    <div class="footer-tech"><span class="tech-badge">Flask</span><span
+                            class="tech-badge">MongoDB</span><span class="tech-badge">Gemini AI</span></div>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Product</h4>
+                        <ul>
+                            <li><a href="#features">Features</a></li>
+                            <li><a href="#how-it-works">How It Works</a></li>
+                            <li><a href="#conditions">Health Conditions</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Resources</h4>
+                        <ul>
+                            <li><a href="#">Documentation</a></li>
+                            <li><a href="#">API Reference</a></li>
+                            <li><a href="#">Health Blog</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Legal</h4>
+                        <ul>
+                            <li><a href="#">Privacy Policy</a></li>
+                            <li><a href="#">Terms of Service</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="copyright">© 2026 Health-Aware Recipe Modifier. All rights reserved.</p>
+                <p class="disclaimer"><i data-lucide="alert-triangle" class="lucide-icon-sm"></i> Disclaimer: This tool
+                    is not a replacement for professional medical advice. Always consult with your healthcare provider
+                    before making dietary changes.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Fetch and update landing page stats
+        async function loadStats() {
+            try {
+                // Add timeout to prevent hanging
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+                const response = await fetch('/api/stats', {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                const data = await response.json();
+
+                // Format numbers with K/M suffix
+                function formatNumber(num) {
+                    if (num >= 1000000) {
+                        return (num / 1000000).toFixed(1) + 'M';
+                    } else if (num >= 1000) {
+                        return (num / 1000).toFixed(1) + 'K';
+                    }
+                    return num.toString();
+                }
+
+                // Animate number counting
+                function animateCount(element, target, suffix = '') {
+                    let current = 0;
+                    const increment = Math.ceil(target / 30);
+                    const timer = setInterval(() => {
+                        current += increment;
+                        if (current >= target) {
+                            current = target;
+                            clearInterval(timer);
+                        }
+                        element.textContent = formatNumber(current) + suffix;
+                    }, 30);
+                }
+
+                // Update stats with animation
+                const recipesEl = document.getElementById('stat-recipes');
+                const usersEl = document.getElementById('stat-users');
+                const conditionsEl = document.getElementById('stat-conditions');
+
+                if (recipesEl && data.recipes_modified !== undefined) {
+                    recipesEl.innerHTML = '';
+                    animateCount(recipesEl, data.recipes_modified, '+');
+                }
+
+                if (usersEl && data.users !== undefined) {
+                    usersEl.innerHTML = '';
+                    animateCount(usersEl, data.users, '+');
+                }
+
+                if (conditionsEl && data.health_conditions !== undefined) {
+                    conditionsEl.innerHTML = '';
+                    animateCount(conditionsEl, data.health_conditions, '+');
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                // Set default values on error or timeout
+                const recipesEl = document.getElementById('stat-recipes');
+                const usersEl = document.getElementById('stat-users');
+                const conditionsEl = document.getElementById('stat-conditions');
+
+                if (recipesEl) recipesEl.textContent = '0+';
+                if (usersEl) usersEl.textContent = '0+';
+                if (conditionsEl) conditionsEl.textContent = '12+';
+            }
+        }
+
+        // Load stats on page load
+        document.addEventListener('DOMContentLoaded', loadStats);
+
+        const mobileToggle = document.getElementById('mobile-toggle');
+        const navLinks = document.getElementById('nav-links');
+        mobileToggle.addEventListener('click', () => { navLinks.classList.toggle('active'); mobileToggle.classList.toggle('active'); });
+        document.querySelectorAll('.nav-links a').forEach(link => { link.addEventListener('click', () => { navLinks.classList.remove('active'); mobileToggle.classList.remove('active'); }); });
+        window.addEventListener('scroll', () => { const navbar = document.getElementById('navbar'); if (window.scrollY > 50) { navbar.classList.add('scrolled'); } else { navbar.classList.remove('scrolled'); } });
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => { anchor.addEventListener('click', function (e) { e.preventDefault(); const target = document.querySelector(this.getAttribute('href')); if (target) { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }); });
+        const observer = new IntersectionObserver((entries) => { entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('animate-in'); } }); }, { threshold: 0.1 });
+        document.querySelectorAll('.step-card, .feature-card, .condition-card, .output-card, .benefit-item').forEach(el => { observer.observe(el); });
+    </script>
+</body>
+
+</html>

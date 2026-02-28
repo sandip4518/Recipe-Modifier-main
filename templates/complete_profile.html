@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Complete your HealthRecipeAI profile - Set your health goals and metrics.">
+    <title>Complete Profile - HealthRecipeAI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .profile-completion-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #e6f7f7 0%, #e8f4fc 50%, #f0f9ff 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-completion-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 176, 176, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: backgroundMove 20s linear infinite;
+        }
+
+        @keyframes backgroundMove {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(50px, 50px);
+            }
+        }
+
+        .profile-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 176, 176, 0.15);
+            max-width: 600px;
+            width: 100%;
+            padding: 3rem;
+            position: relative;
+            z-index: 1;
+            animation: slideIn 0.6s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            background: transparent !important;
+            padding: 0;
+        }
+
+        .profile-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            background: transparent !important;
+        }
+
+        .profile-header p {
+            color: #64748b;
+            font-size: 1rem;
+        }
+
+        .progress-indicator {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            position: relative;
+            padding: 0 1rem;
+        }
+
+        .progress-track {
+            position: absolute;
+            top: 15px;
+            left: calc(16.66% + -0.5rem);
+            right: calc(16.66% + 0.5rem);
+            height: 3px;
+            background: #e5e7eb;
+            z-index: 0;
+            width: 70%;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #22c55e;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .progress-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .progress-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            margin: 0 auto 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            color: #9ca3af;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-step.active .progress-dot {
+            background: linear-gradient(135deg, #00b0b0 0%, #1a96dd 100%);
+            color: white;
+            transform: scale(1.15);
+            box-shadow: 0 4px 12px rgba(0, 176, 176, 0.3);
+        }
+
+        .progress-step.completed .progress-dot {
+            background: #22c55e;
+            color: white;
+        }
+
+
+
+        .progress-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        .progress-step.active .progress-label {
+            color: #00b0b0;
+            font-weight: 700;
+        }
+
+        .form-slide {
+            display: none;
+            animation: fadeSlide 0.5s ease-out;
+        }
+
+        .form-slide.active {
+            display: block;
+        }
+
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .form-label .icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #00b0b0;
+            box-shadow: 0 0 0 3px rgba(0, 176, 176, 0.1);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            background: white;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: #00b0b0;
+            box-shadow: 0 0 0 3px rgba(0, 176, 176, 0.1);
+        }
+
+        .error-text {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00b0b0 0%, #1a96dd 50%, #3b82f6 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 176, 176, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 176, 176, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .input-hint {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+
+        .goal-option {
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .goal-option:hover {
+            border-color: #00b0b0;
+            background: rgba(0, 176, 176, 0.05);
+        }
+
+        .goal-option input[type="radio"] {
+            display: none;
+        }
+
+        .goal-option input[type="radio"]:checked+.goal-content {
+            color: #00b0b0;
+        }
+
+        .goal-option input[type="radio"]:checked~.goal-option {
+            border-color: #00b0b0;
+            background: rgba(0, 176, 176, 0.1);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="profile-completion-container">
+        <div class="profile-card">
+            <div class="profile-header">
+                <h1><i data-lucide="target" class="inline-block w-8 h-8 mr-2 text-primary"></i> {{ page_title or 'Complete Your Profile' }}
+                </h1>
+                <p>{{ page_subtitle or 'Help us personalize your health journey' }}</p>
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">
+                <span>{% if category == 'error' %}<i data-lucide="alert-triangle" class="inline-block w-4 h-4"></i>{%
+                    else %}<i data-lucide="check-circle" class="inline-block w-4 h-4"></i>{% endif %}</span>
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <!-- Progress Indicator -->
+            <div class="progress-indicator">
+                <div class="progress-track">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-step active" id="step-1">
+                    <div class="progress-dot">1</div>
+                    <div class="progress-label">Basics</div>
+                </div>
+                <div class="progress-step" id="step-2">
+                    <div class="progress-dot">2</div>
+                    <div class="progress-label">Body</div>
+                </div>
+                <div class="progress-step" id="step-3">
+                    <div class="progress-dot">3</div>
+                    <div class="progress-label">Diet</div>
+                </div>
+                <div class="progress-step" id="step-4">
+                    <div class="progress-dot">4</div>
+                    <div class="progress-label">Goals</div>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ form_action or url_for('complete_profile') }}" id="profileForm">
+                {{ form.hidden_tag() }}
+
+                <!-- Slide 1: Age & Weight -->
+                <div class="form-slide active" id="slide-1">
+                    <div class="form-group">
+                        <label for="{{ form.age.id }}" class="form-label">
+                            <span class="icon"><i data-lucide="calendar" class="w-4 h-4"></i></span>{{
+                            form.age.label.text }}
+                        </label>
+                        {{ form.age(class="form-input", placeholder="Enter your age", type="number") }}
+                        <div class="input-hint">We need this to calculate your nutritional needs</div>
+                        {% if form.age.errors %}
+                        {% for error in form.age.errors %}
+                        <div class="error-text"><i data-lucide="alert-circle" class="inline-block w-3 h-3 mr-1"></i> {{
+                            error }}</div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.weight.id }}" class="form-label">
+                            <span class="icon"><i data-lucide="scale" class="w-4 h-4"></i></span>{{
+                            form.weight.label.text }}
+                        </label>
+                        {{ form.weight(class="form-input", placeholder="Enter your weight in kg", type="number") }}
+                        <div class="input-hint">Your current weight in kilograms</div>
+                        {% if form.weight.errors %}
+                        {% for error in form.weight.errors %}
+                        <div class="error-text"><i data-lucide="alert-circle" class="inline-block w-3 h-3 mr-1"></i> {{
+                            error }}</div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-primary" onclick="nextSlide()">Next <i
+                                data-lucide="arrow-right" class="inline-block w-4 h-4 ml-1"></i></button>
+                    </div>
+                </div>
+
+                <!-- Slide 2: Height & Gender -->
+                <div class="form-slide" id="slide-2">
+                    <div class="form-group">
+                        <label for="{{ form.height.id }}" class="form-label">
+                            <span class="icon"><i data-lucide="ruler" class="w-4 h-4"></i></span>{{
+                            form.height.label.text }}
+                        </label>
+                        {{ form.height(class="form-input", placeholder="Enter your height in cm", type="number") }}
+                        <div class="input-hint">Your height in centimeters</div>
+                        {% if form.height.errors %}
+                        {% for error in form.height.errors %}
+                        <div class="error-text"><i data-lucide="alert-circle" class="inline-block w-3 h-3 mr-1"></i> {{
+                            error }}</div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.gender.id }}" class="form-label">
+                            <span class="icon"><i data-lucide="user" class="w-4 h-4"></i></span>{{
+                            form.gender.label.text }}
+                        </label>
+                        {{ form.gender(class="form-select") }}
+                        <div class="input-hint">Select the gender you identify with</div>
+                        {% if form.gender.errors %}
+                        {% for error in form.gender.errors %}
+                        <div class="error-text"><i data-lucide="alert-circle" class="inline-block w-3 h-3 mr-1"></i> {{
+                            error }}</div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-secondary" onclick="prevSlide()"><i
+                                data-lucide="arrow-left" class="inline-block w-4 h-4 mr-1"></i> Back</button>
+                        <button type="button" class="btn btn-primary" onclick="nextSlide()">Next <i
+                                data-lucide="arrow-right" class="inline-block w-4 h-4 ml-1"></i></button>
+                    </div>
+                </div>
+
+                <!-- Slide 3: Diet & Allergies -->
+                <div class="form-slide" id="slide-3">
+                    <div class="form-group">
+                        <label for="{{ form.diet_type.id }}" class="form-label">
+                            <span class="icon"><i data-lucide="utensils" class="w-4 h-4"></i></span>{{
+                            form.diet_type.label.text }}
+                        </label>
+                        {{ form.diet_type(class="form-input", placeholder="e.g. Vegetarian, Keto (Optional)") }}
+                        <div class="input-hint">Specific dietary preferences</div>
+                        {% if form.diet_type.errors %}
+                        {% for error in form.diet_type.errors %}
+                        <div class="error-text"><i data-lucide="alert-circle" class="inline-block w-3 h-3 mr-1"></i> {{
+                            error }}</div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.allergies.id }}" class="form-label">
+                            <span class="icon"><i data-lucide="alert-octagon" class="w-4 h-4"></i></span>{{
+                            form.allergies.label.text }}
+                        </label>
+                        {{ form.allergies(class="form-input", placeholder="e.g. Peanuts, Shellfish (Optional)") }}
+                        <div class="input-hint">Any allergies we should know about</div>
+                        {% if form.allergies.errors %}
+                        {% for error in form.allergies.errors %}
+                        <div class="error-text"><i data-lucide="alert-circle" class="inline-block w-3 h-3 mr-1"></i> {{
+                            error }}</div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-secondary" onclick="prevSlide()"><i
+                                data-lucide="arrow-left" class="inline-block w-4 h-4 mr-1"></i> Back</button>
+                        <button type="button" class="btn btn-primary" onclick="nextSlide()">Next <i
+                                data-lucide="arrow-right" class="inline-block w-4 h-4 ml-1"></i></button>
+                    </div>
+                </div>
+
+                <!-- Slide 4: Calorie Target & Goal -->
+                <div class="form-slide" id="slide-4">
+                    <div class="form-group">
+                        <label for="{{ form.calorie_target.id }}" class="form-label">
+                            <span class="icon"><i data-lucide="flame" class="w-4 h-4"></i></span>{{
+                            form.calorie_target.label.text }}
+                        </label>
+                        {{ form.calorie_target(class="form-input", placeholder="e.g., 2000", type="number") }}
+                        <div class="input-hint">Your daily calorie goal (we'll help you calculate this)</div>
+                        {% if form.calorie_target.errors %}
+                        {% for error in form.calorie_target.errors %}
+                        <div class="error-text"><i data-lucide="alert-circle" class="inline-block w-3 h-3 mr-1"></i> {{
+                            error }}</div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                
+                <!-- (Slide 4 continued) -->
+
+                    <div class="form-group">
+                        <label for="{{ form.goal.id }}" class="form-label">
+                            <span class="icon"><i data-lucide="target" class="w-4 h-4"></i></span>{{
+                            form.goal.label.text }}
+                        </label>
+                        {{ form.goal(class="form-select") }}
+                        <div class="input-hint">Choose what you want to achieve</div>
+                        {% if form.goal.errors %}
+                        {% for error in form.goal.errors %}
+                        <div class="error-text"><i data-lucide="alert-circle" class="inline-block w-3 h-3 mr-1"></i> {{
+                            error }}</div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-secondary" onclick="prevSlide()"><i
+                                data-lucide="arrow-left" class="inline-block w-4 h-4 mr-1"></i> Back</button>
+                        <button type="submit" class="btn btn-primary"><i data-lucide="rocket"
+                                class="inline-block w-4 h-4 mr-2"></i> {{ submit_text or 'Complete Profile' }}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 4;
+
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        function updateProgress() {
+            // Update progress dots
+            for (let i = 1; i <= totalSlides; i++) {
+                const step = document.getElementById(`step-${i}`);
+                if (i < currentSlide) {
+                    step.classList.add('completed');
+                    step.classList.remove('active');
+                } else if (i === currentSlide) {
+                    step.classList.add('active');
+                    step.classList.remove('completed');
+                } else {
+                    step.classList.remove('active', 'completed');
+                }
+            }
+
+            // Update slides
+
+            for (let i = 1; i <= totalSlides; i++) {
+                const slide = document.getElementById(`slide-${i}`);
+                if (i === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            }
+
+            // Update progress connection line
+            const progressFill = document.getElementById('progress-fill');
+            if (progressFill) {
+                const percent = ((currentSlide - 1) / (totalSlides - 1)) * 100;
+                progressFill.style.width = percent + '%';
+            }
+        }
+
+        function showError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const formGroup = field.closest('.form-group');
+
+            // Remove any existing error message
+            const existingError = formGroup.querySelector('.validation-error');
+            if (existingError) {
+                existingError.remove();
+            }
+
+            // Add error styling
+            field.style.borderColor = '#ef4444';
+            field.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+
+            // Create and add error message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'validation-error error-text';
+            errorDiv.innerHTML = '<i data-lucide="alert-triangle" class="inline-block w-3 h-3 mr-1"></i> ' + message;
+            formGroup.appendChild(errorDiv);
+            lucide.createIcons(); // Re-render icons for new error msg
+        }
+
+        function clearError(fieldId) {
+            const field = document.getElementById(fieldId);
+            const formGroup = field.closest('.form-group');
+
+            // Remove error styling
+            field.style.borderColor = '#e5e7eb';
+            field.style.boxShadow = '';
+
+            // Remove error message
+            const existingError = formGroup.querySelector('.validation-error');
+            if (existingError) {
+                existingError.remove();
+            }
+        }
+
+        function validateSlide1() {
+            const ageField = document.getElementById('age');
+            const weightField = document.getElementById('weight');
+            let isValid = true;
+
+            // Clear previous errors
+            clearError('age');
+            clearError('weight');
+
+            // Validate age
+            const age = parseInt(ageField.value);
+            if (!ageField.value || isNaN(age)) {
+                showError('age', 'Please enter your age');
+                isValid = false;
+            } else if (age < 10 || age > 120) {
+                showError('age', 'Age must be between 10 and 120 years');
+                isValid = false;
+            }
+
+            // Validate weight
+            const weight = parseFloat(weightField.value);
+            if (!weightField.value || isNaN(weight)) {
+                showError('weight', 'Please enter your weight');
+                isValid = false;
+            } else if (weight < 20 || weight > 300) {
+                showError('weight', 'Weight must be between 20 and 300 kg');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function validateSlide2() {
+            const heightField = document.getElementById('height');
+            const genderField = document.getElementById('gender');
+            let isValid = true;
+
+            // Clear previous errors
+            clearError('height');
+            clearError('gender');
+
+            // Validate height
+            const height = parseFloat(heightField.value);
+            if (!heightField.value || isNaN(height)) {
+                showError('height', 'Please enter your height');
+                isValid = false;
+            } else if (height < 50 || height > 250) {
+                showError('height', 'Height must be between 50 and 250 cm');
+                isValid = false;
+            }
+
+            // Validate gender
+            if (!genderField.value || genderField.value === '') {
+                showError('gender', 'Please select your gender');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function validateSlide3() {
+            // Diet and Allergies are optional, but we can add validation here if needed
+            return true;
+        }
+
+        function validateSlide4() {
+            const calorieField = document.getElementById('calorie_target');
+            const goalField = document.getElementById('goal');
+            let isValid = true;
+
+            // Clear previous errors
+            clearError('calorie_target');
+            clearError('goal');
+
+            // Validate calorie target
+            const calories = parseInt(calorieField.value);
+            if (!calorieField.value || isNaN(calories)) {
+                showError('calorie_target', 'Please enter your daily calorie target');
+                isValid = false;
+            } else if (calories < 500 || calories > 5000) {
+                showError('calorie_target', 'Calorie target must be between 500 and 5000 kcal');
+                isValid = false;
+            }
+
+            // Validate goal selection
+            if (!goalField.value || goalField.value === '') {
+                showError('goal', 'Please select your fitness goal');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function nextSlide() {
+            // Validate current slide before proceeding
+            let isValid = false;
+
+            if (currentSlide === 1) {
+                isValid = validateSlide1();
+            } else if (currentSlide === 2) {
+                isValid = validateSlide2();
+            } else if (currentSlide === 3) {
+                isValid = validateSlide3();
+            } else if (currentSlide === 4) {
+                isValid = validateSlide4();
+            }
+
+            // Only proceed if validation passes
+            if (isValid && currentSlide < totalSlides) {
+                currentSlide++;
+                updateProgress();
+
+                // Scroll to top of form
+                document.querySelector('.profile-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                updateProgress();
+
+                // Scroll to top of form
+                document.querySelector('.profile-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // Add real-time validation on input
+        document.addEventListener('DOMContentLoaded', function () {
+            updateProgress();
+
+            // Add input event listeners for real-time validation
+            const ageField = document.getElementById('age');
+            const weightField = document.getElementById('weight');
+            const heightField = document.getElementById('height');
+            const calorieField = document.getElementById('calorie_target');
+            const goalField = document.getElementById('goal');
+
+            if (ageField) {
+                ageField.addEventListener('input', function () {
+                    if (this.value) clearError('age');
+                });
+            }
+
+            if (weightField) {
+                weightField.addEventListener('input', function () {
+                    if (this.value) clearError('weight');
+                });
+            }
+
+            if (heightField) {
+                heightField.addEventListener('input', function () {
+                    if (this.value) clearError('height');
+                });
+            }
+
+            if (calorieField) {
+                calorieField.addEventListener('input', function () {
+                    if (this.value) clearError('calorie_target');
+                });
+            }
+
+            if (goalField) {
+                goalField.addEventListener('change', function () {
+                    if (this.value) clearError('goal');
+                });
+            }
+
+            const genderField = document.getElementById('gender');
+            if (genderField) {
+                genderField.addEventListener('change', function () {
+                    if (this.value) clearError('gender');
+                });
+            }
+
+            // Validate entire form before submission
+            const form = document.getElementById('profileForm');
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    const slide1Valid = validateSlide1();
+                    const slide2Valid = validateSlide2();
+                    const slide3Valid = validateSlide3();
+                    const slide4Valid = validateSlide4();
+
+                    if (!slide1Valid || !slide2Valid || !slide3Valid || !slide4Valid) {
+                        e.preventDefault();
+
+                        // Go to first invalid slide
+                        if (!slide1Valid) {
+                            currentSlide = 1;
+                        } else if (!slide2Valid) {
+                            currentSlide = 2;
+                        } else if (!slide3Valid) {
+                            currentSlide = 3;
+                        } else if (!slide4Valid) {
+                            currentSlide = 4;
+                        }
+                        updateProgress();
+
+                        alert('Please fill in all required fields correctly before submitting.');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Login to Health-Aware Recipe Modifier - Access your personalized recipe modifications.">
+    <title>Login - HealthRecipeAI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .password-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-input-wrapper .password-input {
+            padding-right: 3rem;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            transition: color 0.2s ease;
+            border-radius: 6px;
+        }
+
+        .password-toggle:hover {
+            color: #00b0b0;
+            background: rgba(0, 176, 176, 0.05);
+        }
+
+        .password-toggle:focus {
+            outline: 2px solid rgba(0, 176, 176, 0.3);
+            outline-offset: 2px;
+        }
+
+        .eye-icon {
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-page">
+        <div class="auth-container">
+            <!-- Logo -->
+            <div class="logo-header">
+                <a href="{{ url_for('landing_page') }}">
+                    <span class="logo-icon"><i data-lucide="salad" class="lucide-icon"></i></span>
+                    <span class="logo-text">HealthRecipe<span class="logo-accent">AI</span></span>
+                </a>
+            </div>
+
+            <!-- Login Card -->
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1><i data-lucide="hand" class="lucide-icon" style="width: 1.5em; height: 1.5em;"></i> Welcome
+                        Back!</h1>
+                    <p>Sign in to access your personalized recipes</p>
+                </div>
+                <div class="auth-body">
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                        <span>{% if category == 'error' %}<i data-lucide="alert-triangle" class="lucide-icon"></i>{%
+                            else %}<i data-lucide="info" class="lucide-icon"></i>{% endif %}</span>
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" action="{{ url_for('login') }}">
+                        {{ form.hidden_tag() }}
+
+                        <div class="form-group">
+                            <label for="{{ form.username.id }}" class="form-label">
+                                <span class="icon"><i data-lucide="user" class="lucide-icon"></i></span>{{
+                                form.username.label.text }}
+                            </label>
+                            {{ form.username(class="form-input", placeholder="Enter username or email") }}
+                            {% if form.username.errors %}
+                            {% for error in form.username.errors %}
+                            <div class="error-text"><i data-lucide="alert-circle" class="lucide-icon"
+                                    style="width: 1em; height: 1em;"></i> {{ error }}</div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.password.id }}" class="form-label">
+                                <span class="icon"><i data-lucide="lock" class="lucide-icon"></i></span>{{
+                                form.password.label.text }}
+                            </label>
+                            <div class="password-input-wrapper">
+                                {{ form.password(class="form-input password-input", placeholder="Enter password") }}
+                                <button type="button" class="password-toggle"
+                                    onclick="togglePassword('{{ form.password.id }}', this)"
+                                    aria-label="Toggle password visibility">
+                                    <i data-lucide="eye" class="eye-icon eye-open"></i>
+                                    <i data-lucide="eye-off" class="eye-icon eye-closed" style="display: none;"></i>
+                                </button>
+                            </div>
+                            {% if form.password.errors %}
+                            {% for error in form.password.errors %}
+                            <div class="error-text"><i data-lucide="alert-circle" class="lucide-icon"
+                                    style="width: 1em; height: 1em;"></i> {{ error }}</div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-checkbox">
+                                {{ form.remember_me(id="remember_me") }}
+                                <label for="remember_me">{{ form.remember_me.label.text }}</label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-submit">
+                            <i data-lucide="log-in" class="lucide-icon"></i> Sign In
+                        </button>
+                    </form>
+
+                    <div class="auth-divider"><span>or</span></div>
+
+                    <div class="auth-link-section">
+                        <p>Don't have an account?</p>
+                        <a href="{{ url_for('register') }}" class="btn-secondary-auth">
+                            <i data-lucide="user-plus" class="lucide-icon"></i> Create Account
+                        </a>
+                    </div>
+
+                    <div class="auth-link-section">
+                        <a href="{{ url_for('landing_page') }}" class="back-link">
+                            <i data-lucide="arrow-left" class="lucide-icon"></i> Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Card -->
+            <div class="info-card">
+                <h4><i data-lucide="lightbulb" class="lucide-icon"></i> Why Create an Account?</h4>
+                <ul>
+                    <li><i data-lucide="check-circle" class="lucide-icon" style="color: var(--success);"></i>
+                        <strong>Save your health profile</strong> for instant results</li>
+                    <li><i data-lucide="check-circle" class="lucide-icon" style="color: var(--success);"></i>
+                        <strong>Build a library</strong> of safe, healthy recipes</li>
+                    <li><i data-lucide="check-circle" class="lucide-icon" style="color: var(--success);"></i>
+                        <strong>Unlock PDF reports</strong> to share with doctors</li>
+                    <li><i data-lucide="check-circle" class="lucide-icon" style="color: var(--success);"></i>
+                        <strong>Sync across devices</strong> automatically</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle password visibility
+        function togglePassword(fieldId, button) {
+            const passwordField = document.getElementById(fieldId);
+            const eyeOpen = button.querySelectorAll('.eye-open');
+            const eyeClosed = button.querySelectorAll('.eye-closed');
+
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                eyeOpen.forEach(el => el.style.display = 'none');
+                eyeClosed.forEach(el => el.style.display = 'block');
+            } else {
+                passwordField.type = 'password';
+                eyeOpen.forEach(el => el.style.display = 'block');
+                eyeClosed.forEach(el => el.style.display = 'none');
+            }
+        }
+
+        // Add animation on load
+        document.addEventListener('DOMContentLoaded', function () {
+            const card = document.querySelector('.auth-card');
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100);
+
+            // Initialize Lucide icons
+            lucide.createIcons();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Recipe Analysis Results - Your personalized healthy recipe is ready.">
+    <title>Results - HealthRecipeAI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Profile Alert Cards on Result Page */
+        .profile-alert-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.875rem;
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            border-left: 4px solid;
+            animation: paSlideIn 0.4s ease-out;
+        }
+
+        @keyframes paSlideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .profile-alert-card.danger {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            border-left-color: #ef4444;
+        }
+
+        .profile-alert-card.warning {
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            border-left-color: #f59e0b;
+        }
+
+        .profile-alert-card.info {
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            border-left-color: #3b82f6;
+        }
+
+        .pa-icon-wrap {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .profile-alert-card.danger .pa-icon-wrap {
+            background: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+        }
+
+        .profile-alert-card.warning .pa-icon-wrap {
+            background: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+        }
+
+        .profile-alert-card.info .pa-icon-wrap {
+            background: rgba(59, 130, 246, 0.15);
+            color: #2563eb;
+        }
+
+        .pa-content { flex: 1; min-width: 0; }
+
+        .pa-title {
+            font-weight: 700;
+            font-size: 0.925rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-alert-card.danger .pa-title { color: #991b1b; }
+        .profile-alert-card.warning .pa-title { color: #92400e; }
+        .profile-alert-card.info .pa-title { color: #1e40af; }
+
+        .pa-message {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-alert-card.danger .pa-message { color: #7f1d1d; }
+        .profile-alert-card.warning .pa-message { color: #78350f; }
+        .profile-alert-card.info .pa-message { color: #1e3a5f; }
+
+        .pa-ingredients {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375rem;
+        }
+
+        .pa-ing-tag {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .profile-alert-card.danger .pa-ing-tag {
+            background: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+        }
+
+        .profile-alert-card.warning .pa-ing-tag {
+            background: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+        }
+
+        .profile-alert-card.info .pa-ing-tag {
+            background: rgba(59, 130, 246, 0.15);
+            color: #2563eb;
+        }
+
+        /* Confirmation Modal */
+        .confirm-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 1.5rem;
+        }
+
+        .confirm-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .confirm-modal {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 2.5rem 2rem 2rem;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 176, 176, 0.1);
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .confirm-overlay.active .confirm-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .confirm-icon {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 1.25rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00b0b0, #3b82f6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 8px 24px rgba(0, 176, 176, 0.3);
+        }
+
+        .confirm-title {
+            font-size: 1.375rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.75rem;
+        }
+
+        .confirm-message {
+            font-size: 0.9375rem;
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 0.25rem;
+        }
+
+        .confirm-category {
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(0, 176, 176, 0.1), rgba(59, 130, 246, 0.1));
+            color: #007070;
+            font-weight: 600;
+            padding: 0.15rem 0.6rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .confirm-date {
+            color: #94a3b8;
+            font-size: 0.8125rem;
+        }
+
+        .confirm-question {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #334155;
+            margin: 1rem 0 1.5rem;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .confirm-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.875rem;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+        }
+
+        .confirm-btn-yes {
+            background: linear-gradient(135deg, #00b0b0, #3b82f6);
+            color: white;
+            box-shadow: 0 4px 14px rgba(0, 176, 176, 0.3);
+        }
+
+        .confirm-btn-yes:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 176, 176, 0.4);
+        }
+
+        .confirm-btn-no {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .confirm-btn-no:hover {
+            background: #e2e8f0;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="results-page">
+        <!-- Header -->
+        <header class="results-header">
+            <div class="container">
+                <div class="header-left">
+                    <a href="{{ url_for('index') }}" class="back-btn"><i data-lucide="arrow-left"
+                            class="inline-block w-4 h-4 mr-1"></i> Check Another Recipe</a>
+                    <div class="header-title">
+                        <h1><i data-lucide="bar-chart-2" class="inline-block w-8 h-8 mr-2 text-primary"></i> {{ recipe_name + ' Analysis Results' if recipe_name else 'Recipe Analysis Results' }}</h1>
+                        <p>Here is your optimized, doctor-approved recipe.</p>
+                    </div>
+                </div>
+                <!-- Profile Button -->
+                <div class="header-right">
+                    <span style="font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                        {{ current_user.username if current_user.is_authenticated else 'Anonymous' }}
+                    </span>
+                    <a href="{{ url_for('profile') if current_user.is_authenticated else url_for('register') }}" class="back-btn">
+                        Profile
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+
+                <!-- Summary Card -->
+                <div class="results-card">
+                    <div class="card-header info">
+                        <h3><span class="header-icon"><i data-lucide="clipboard-list" class="w-6 h-6"></i></span>
+                            Analysis Summary</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <h4><i data-lucide="hospital" class="inline-block w-4 h-4 mr-1"></i> Health Condition
+                                </h4>
+                                <span class="badge">{{ condition.replace('_', ' ').title() }}</span>
+                            </div>
+                            <div class="summary-item">
+                                <h4><i data-lucide="clock" class="inline-block w-4 h-4 mr-1"></i> Analysis Date</h4>
+                                <span class="value">{{ moment }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile-Based Warnings -->
+                {% if profile_warnings %}
+                <div class="results-card" id="profile-warnings-section">
+                    <div class="card-header" style="background: linear-gradient(135deg, #f59e0b, #ef4444); color: white;">
+                        <h3><span class="header-icon"><i data-lucide="shield-alert" class="w-6 h-6"></i></span>
+                            Profile-Based Warnings</h3>
+                    </div>
+                    <div class="card-body">
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            {% for warning in profile_warnings %}
+                            <div class="profile-alert-card {{ warning.severity }}">
+                                <div class="pa-icon-wrap">
+                                    <i data-lucide="{{ warning.icon or 'alert-triangle' }}" class="w-5 h-5"></i>
+                                </div>
+                                <div class="pa-content">
+                                    <div class="pa-title">{{ warning.title }}</div>
+                                    <div class="pa-message">{{ warning.message }}</div>
+                                    {% if warning.ingredients %}
+                                    <div class="pa-ingredients">
+                                        {% for ing in warning.ingredients %}
+                                        <span class="pa-ing-tag"><i data-lucide="alert-circle" class="w-3 h-3"></i> {{ ing }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Original Ingredients -->
+                <div class="results-card">
+                    <div class="card-header secondary">
+                        <h3><span class="header-icon"><i data-lucide="file-text" class="w-6 h-6"></i></span> Original
+                            Ingredients</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="ingredients-grid">
+                            {% for ingredient in original_ingredients %}
+                            <span class="ingredient-badge secondary">{{ ingredient.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Harmful Ingredients -->
+                {% if harmful %}
+                <div class="results-card">
+                    <div class="card-header danger">
+                        <h3><span class="header-icon"><i data-lucide="alert-triangle" class="w-6 h-6"></i></span>
+                            Harmful Ingredients Detected</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert-box danger">
+                            <span><i data-lucide="info" class="inline-block w-4 h-4 mr-1"></i> The following ingredients
+                                may be harmful for your condition and have been replaced:</span>
+                        </div>
+                        <div class="ingredients-grid">
+                            {% for ingredient in harmful %}
+                            <span class="ingredient-badge danger"><i data-lucide="x"
+                                    class="inline-block w-3 h-3 mr-1"></i> {{ ingredient }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="results-card">
+                    <div class="card-header success">
+                        <h3><span class="header-icon"><i data-lucide="party-popper" class="w-6 h-6"></i></span> Great
+                            News!</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert-box success">
+                            <span><i data-lucide="thumbs-up" class="inline-block w-4 h-4 mr-1"></i> All your ingredients
+                                are safe for your condition! No replacements needed.</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Safe Ingredients -->
+                <div class="results-card">
+                    <div class="card-header success">
+                        <h3><span class="header-icon"><i data-lucide="shield-check" class="w-6 h-6"></i></span> Safe
+                            Ingredients for Your Recipe</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert-box success">
+                            <span><i data-lucide="heart" class="inline-block w-4 h-4 mr-1"></i> These ingredients are
+                                safe and healthy for your condition:</span>
+                        </div>
+                        <div class="ingredients-grid">
+                            {% for ingredient in safe %}
+                            <span class="ingredient-badge success"><i data-lucide="check"
+                                    class="inline-block w-3 h-3 mr-1"></i> {{ ingredient }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nutrition Summary (Loaded via AJAX for faster initial page load) -->
+                <div class="results-card nutrition-card" id="nutrition-section">
+                    <div class="card-header nutrition">
+                        <h3><span class="header-icon"><i data-lucide="salad" class="w-6 h-6"></i></span> Nutrition
+                            Summary (Per Serving)</h3>
+                    </div>
+                    <div class="card-body" id="nutrition-content">
+                        <!-- Loading state -->
+                        <div id="nutrition-loading" class="nutrition-loading">
+                            <div class="loading-spinner"></div>
+                            <p>Calculating nutrition information...</p>
+                        </div>
+                        <!-- Content will be injected here via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Modified Recipe -->
+                <div class="results-card">
+                    <div class="card-header primary" style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0;"><span class="header-icon"><i data-lucide="chef-hat" class="w-6 h-6"></i></span> Your
+                            Modified Recipe</h3>
+                        {% if current_user.is_authenticated and entry_id %}
+                        <div class="recipe-actions">
+                            <button id="favoriteBtn" class="fav-action-btn {{ 'active' if is_already_saved }}" onclick="toggleResultFavorite('{{ entry_id }}')">
+                                <i data-lucide="heart" class="w-5 h-5 {{ 'fill-current' if is_already_saved }}"></i>
+                                <span class="btn-text">{{ 'Saved' if is_already_saved else 'Save to Cookbook' }}</span>
+                            </button>
+                            <div class="custom-dropdown" id="categoryDropdown">
+                                <input type="hidden" id="resultCategory" value="General">
+                                <button type="button" class="custom-dropdown-trigger" onclick="toggleDropdown()">
+                                    <i data-lucide="folder" class="w-4 h-4"></i>
+                                    <span class="dropdown-label">Category</span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 dropdown-arrow"></i>
+                                </button>
+                                <div class="custom-dropdown-menu" id="categoryMenu">
+                                    <div class="dropdown-item active" data-value="General" onclick="selectCategory(this, '{{ entry_id }}')">
+                                        <i data-lucide="layers" class="w-4 h-4"></i><span>General</span>
+                                        <i data-lucide="check" class="w-4 h-4 check-icon"></i>
+                                    </div>
+                                    <div class="dropdown-item" data-value="Weekday Dinners" onclick="selectCategory(this, '{{ entry_id }}')">
+                                        <i data-lucide="calendar" class="w-4 h-4"></i><span>Weekday Dinners</span>
+                                        <i data-lucide="check" class="w-4 h-4 check-icon"></i>
+                                    </div>
+                                    <div class="dropdown-item" data-value="Kids' Favorites" onclick="selectCategory(this, '{{ entry_id }}')">
+                                        <i data-lucide="smile" class="w-4 h-4"></i><span>Kids' Favorites</span>
+                                        <i data-lucide="check" class="w-4 h-4 check-icon"></i>
+                                    </div>
+                                    <div class="dropdown-item" data-value="Holiday Specials" onclick="selectCategory(this, '{{ entry_id }}')">
+                                        <i data-lucide="gift" class="w-4 h-4"></i><span>Holiday Specials</span>
+                                        <i data-lucide="check" class="w-4 h-4 check-icon"></i>
+                                    </div>
+                                    <div class="dropdown-item" data-value="Breakfast" onclick="selectCategory(this, '{{ entry_id }}')">
+                                        <i data-lucide="coffee" class="w-4 h-4"></i><span>Breakfast</span>
+                                        <i data-lucide="check" class="w-4 h-4 check-icon"></i>
+                                    </div>
+                                    <div class="dropdown-item" data-value="Lunch" onclick="selectCategory(this, '{{ entry_id }}')">
+                                        <i data-lucide="utensils" class="w-4 h-4"></i><span>Lunch</span>
+                                        <i data-lucide="check" class="w-4 h-4 check-icon"></i>
+                                    </div>
+                                    <div class="dropdown-item" data-value="Dinner" onclick="selectCategory(this, '{{ entry_id }}')">
+                                        <i data-lucide="moon" class="w-4 h-4"></i><span>Dinner</span>
+                                        <i data-lucide="check" class="w-4 h-4 check-icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <div class="alert-box info">
+                            <span><i data-lucide="lightbulb" class="inline-block w-4 h-4 mr-1"></i> Here's your
+                                personalized recipe with safe ingredients:</span>
+                        </div>
+                        <div class="recipe-content">
+                            <h5><i data-lucide="book-open" class="inline-block w-4 h-4 mr-1"></i> Recipe Instructions
+                            </h5>
+                            {{ recipe | safe }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <a href="{{ url_for('index') }}" class="action-btn primary">
+                        <i data-lucide="rotate-ccw" class="inline-block w-4 h-4 mr-2"></i> Check Another Recipe
+                    </a>
+                    <a href="{{ url_for('view_report', patient_id=current_user.user_id if current_user.is_authenticated else '1') }}"
+                        class="action-btn info">
+                        <i data-lucide="file-text" class="inline-block w-4 h-4 mr-2"></i> View Health Report
+                    </a>
+                    <a href="{{ url_for('generate_report', patient_id=current_user.user_id if current_user.is_authenticated else '1') }}"
+                        class="action-btn success">
+                        <i data-lucide="download" class="inline-block w-4 h-4 mr-2"></i> Download PDF Report
+                    </a>
+                </div>
+
+                <!-- Health Tips -->
+                <div class="tips-card">
+                    <div class="card-header info">
+                        <h3><span class="header-icon"><i data-lucide="lightbulb" class="w-6 h-6"></i></span> Health Tips
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="tips-grid">
+                            <div class="tips-section">
+                                <h5><i data-lucide="apple" class="inline-block w-4 h-4 mr-1"></i> Nutrition Tips</h5>
+                                <ul>
+                                    <li><span><i data-lucide="check" class="inline-block w-3 h-3"></i></span> Always
+                                        read ingredient labels</li>
+                                    <li><span><i data-lucide="check" class="inline-block w-3 h-3"></i></span> Choose
+                                        whole foods when possible</li>
+                                    <li><span><i data-lucide="check" class="inline-block w-3 h-3"></i></span> Consult
+                                        your healthcare provider</li>
+                                </ul>
+                            </div>
+                            <div class="tips-section">
+                                <h5><i data-lucide="heart" class="inline-block w-4 h-4 mr-1 text-red-500"></i> Remember
+                                </h5>
+                                <ul>
+                                    <li><span><i data-lucide="info" class="inline-block w-3 h-3"></i></span> This tool
+                                        is for guidance only</li>
+                                    <li><span><i data-lucide="info" class="inline-block w-3 h-3"></i></span> Individual
+                                        needs may vary</li>
+                                    <li><span><i data-lucide="info" class="inline-block w-3 h-3"></i></span> Keep track
+                                        of your food intake</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="results-footer">
+            <p><i data-lucide="heart" class="inline-block w-4 h-4 text-red-500"></i> Nutritionist-validated auditing
+                logic</p>
+            <small>This tool is for educational purposes. Always consult with your healthcare provider.</small>
+        </footer>
+    </div>
+
+    <!-- Already Saved Confirmation Modal -->
+    <div class="confirm-overlay" id="confirmOverlay" onclick="closeConfirmModal(event)">
+        <div class="confirm-modal">
+            <div class="confirm-icon">
+                <i data-lucide="bookmark-check" class="w-10 h-10"></i>
+            </div>
+            <h3 class="confirm-title">Already in Cookbook</h3>
+            <p class="confirm-message">
+                This recipe is already saved in your cookbook under 
+                <span class="confirm-category" id="confirmCategory">General</span>
+                <span class="confirm-date" id="confirmDate"></span>.
+            </p>
+            <p class="confirm-question">Would you like to replace it with this version?</p>
+            <div class="confirm-actions">
+                <button class="confirm-btn confirm-btn-yes" id="confirmYesBtn" onclick="confirmReplace()">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    Yes, Replace
+                </button>
+                <button class="confirm-btn confirm-btn-no" onclick="closeConfirmModal()">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                    No, Keep Existing
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pass data from Jinja2 to JavaScript via data attributes (avoids lint errors) -->
+    <div id="nutrition-data"
+        data-ingredients='{{ modified_ingredients_json | safe if modified_ingredients_json else "[]" }}'
+        data-condition="{{ condition }}" 
+        data-entry-id="{{ entry_id if entry_id else '' }}" style="display: none;"></div>
+
+    <script>
+        // Nutrition data configuration - read from data attributes
+        const dataEl = document.getElementById('nutrition-data');
+        const nutritionConfig = {
+            ingredients: JSON.parse(dataEl.dataset.ingredients || '[]'),
+            condition: dataEl.dataset.condition || '',
+            entryId: dataEl.dataset.entryId || null
+        };
+
+        // Function to render nutrition HTML - COMPACT VERSION
+        function renderNutritionHTML(data) {
+            const nutrition = data.nutrition;
+            const warnings = data.warnings || [];
+
+            if (!nutrition) {
+                return '<div class="alert-box warning"><span class="alert-icon"><i data-lucide="alert-triangle" class="w-5 h-5"></i></span><span>Nutrition data unavailable</span></div>';
+            }
+
+            let html = '';
+
+            // Calculate health score
+            const warningCount = warnings.length;
+            const healthScore = Math.max(0, 100 - (warningCount * 15));
+            const healthStatus = healthScore >= 80 ? 'excellent' : healthScore >= 60 ? 'good' : healthScore >= 40 ? 'moderate' : 'caution';
+            const healthIcon = healthScore >= 80 ? 'star' : healthScore >= 60 ? 'check-circle' : healthScore >= 40 ? 'alert-triangle' : 'alert-circle';
+
+            // Compact Header with Score and Main Macros
+            html += `<div class="nutrition-compact-header">
+                <div class="health-score-badge ${healthStatus}">
+                    <i data-lucide="${healthIcon}" class="w-4 h-4"></i>
+                    <span>${healthScore}</span>
+                </div>
+                <div class="macro-pills">
+                    <div class="macro-pill calories">
+                        <i data-lucide="flame" class="w-4 h-4"></i>
+                        <span class="value">${nutrition.macros.calories?.value || 0}</span>
+                        <span class="label">cal</span>
+                    </div>
+                    <div class="macro-pill protein">
+                        <i data-lucide="utensils" class="w-4 h-4"></i>
+                        <span class="value">${nutrition.macros.protein?.value || 0}g</span>
+                        <span class="label">protein</span>
+                    </div>
+                    <div class="macro-pill carbs">
+                        <i data-lucide="wheat" class="w-4 h-4"></i>
+                        <span class="value">${nutrition.macros.carbohydrates?.value || 0}g</span>
+                        <span class="label">carbs</span>
+                    </div>
+                    <div class="macro-pill fat">
+                        <i data-lucide="droplet" class="w-4 h-4"></i>
+                        <span class="value">${nutrition.macros.total_fat?.value || 0}g</span>
+                        <span class="label">fat</span>
+                    </div>
+                </div>
+            </div>`;
+
+            // Warnings (compact)
+            if (warnings.length > 0) {
+                html += '<div class="nutrition-warnings-compact">';
+                warnings.forEach(warning => {
+                    const unit = warning.nutrient === 'Calories' ? ' kcal' :
+                        ['Sodium', 'Potassium', 'Calcium'].includes(warning.nutrient) ? ' mg' : 'g';
+                    html += `<div class="alert-compact ${warning.severity}">
+                        <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                        <span><strong>${warning.nutrient}:</strong> ${warning.message} (${warning.value}${unit})</span>
+                    </div>`;
+                });
+                html += '</div>';
+            }
+
+            // All Macros in Compact Grid
+            html += '<div class="nutrition-compact-section"><h6><i data-lucide="zap" class="w-4 h-4"></i> Macronutrients</h6><div class="nutrition-compact-grid">';
+            
+            const allMacros = [
+                { key: 'total_fat', label: 'Fat', icon: 'droplet' },
+                { key: 'saturated_fat', label: 'Sat. Fat', icon: 'layers' },
+                { key: 'cholesterol', label: 'Cholesterol', icon: 'egg' },
+                { key: 'fiber', label: 'Fiber', icon: 'sprout' },
+                { key: 'sugar', label: 'Sugar', icon: 'candy' }
+            ];
+
+            allMacros.forEach(m => {
+                const value = nutrition.macros[m.key]?.value || 0;
+                const dv = nutrition.macros[m.key]?.dv || 0;
+                const dvClass = dv > 100 ? 'high' : dv > 50 ? 'moderate' : 'low';
+                html += `<div class="compact-nutrient-item">
+                    <div class="nutrient-info">
+                        <i data-lucide="${m.icon}" class="w-4 h-4"></i>
+                        <span class="nutrient-name">${m.label}</span>
+                    </div>
+                    <div class="nutrient-value">${value}${m.key === 'cholesterol' ? 'mg' : 'g'}</div>
+                    <div class="nutrient-bar">
+                        <div class="nutrient-bar-fill ${dvClass}" style="width: ${Math.min(dv, 100)}%"></div>
+                    </div>
+                    <div class="nutrient-dv">${dv}%</div>
+                </div>`;
+            });
+            html += '</div></div>';
+
+            // Vitamins & Minerals Combined in Ultra-Compact Grid
+            html += '<div class="nutrition-compact-section"><h6><i data-lucide="pill" class="w-4 h-4"></i> Vitamins & Minerals</h6><div class="vitamins-minerals-compact">';
+            
+            const nutrients = [
+                { key: 'vitamin_a', label: 'Vit A', type: 'vitamins' },
+                { key: 'vitamin_c', label: 'Vit C', type: 'vitamins' },
+                { key: 'vitamin_d', label: 'Vit D', type: 'vitamins' },
+                { key: 'calcium', label: 'Calcium', type: 'minerals' },
+                { key: 'iron', label: 'Iron', type: 'minerals' },
+                { key: 'potassium', label: 'Potassium', type: 'minerals' },
+                { key: 'sodium', label: 'Sodium', type: 'minerals', invert: true }
+            ];
+
+            nutrients.forEach(n => {
+                const dv = nutrition[n.type]?.[n.key]?.dv || 0;
+                let statusClass;
+                if (n.invert) {
+                    statusClass = dv <= 50 ? 'excellent' : dv <= 75 ? 'good' : dv <= 100 ? 'moderate' : 'high';
+                } else {
+                    statusClass = dv >= 100 ? 'excellent' : dv >= 50 ? 'good' : dv >= 25 ? 'low' : 'deficient';
+                }
+                html += `<div class="compact-micro-item ${statusClass}">
+                    <span class="micro-label">${n.label}</span>
+                    <div class="micro-bar"><div class="micro-bar-fill" style="width: ${Math.min(dv, 100)}%"></div></div>
+                    <span class="micro-value">${dv}%</span>
+                </div>`;
+            });
+            html += '</div></div>';
+
+            // Footer (compact)
+            html += `<div class="nutrition-compact-footer">
+                <span class="footer-item"><i data-lucide="database" class="w-3 h-3"></i> USDA FoodData</span>
+                <span class="footer-item">${nutrition.ingredients_found}/${nutrition.ingredients_analyzed} matched</span>
+                <span class="footer-item">${nutrition.servings} servings</span>
+            </div>`;
+
+            return html;
+        }
+
+
+        async function loadNutrition() {
+            const loadingEl = document.getElementById('nutrition-loading');
+            const contentEl = document.getElementById('nutrition-content');
+
+            if (!nutritionConfig.ingredients || nutritionConfig.ingredients.length === 0) {
+                loadingEl.innerHTML = '<div class="alert-box info"><span class="alert-icon"><i data-lucide="info" class="w-5 h-5"></i></span><span>No ingredients to analyze</span></div>';
+                lucide.createIcons();
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/nutrition', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ingredients: nutritionConfig.ingredients,
+                        condition: nutritionConfig.condition,
+                        entry_id: nutritionConfig.entryId
+                    })
+                });
+
+                const data = await response.json();
+                loadingEl.style.display = 'none';
+                contentEl.insertAdjacentHTML('beforeend', renderNutritionHTML(data));
+                lucide.createIcons(); // Initialize icons for new content
+            } catch (error) {
+                console.error('Nutrition loading error:', error);
+                loadingEl.innerHTML = '<div class="alert-box warning"><span class="alert-icon"><i data-lucide="alert-triangle" class="w-5 h-5"></i></span><span>Failed to load nutrition data. Please refresh to try again.</span></div>';
+                lucide.createIcons();
+            }
+        }
+
+        // Toggle Favorite from Results Page
+        let pendingEntryId = null;
+
+        async function toggleResultFavorite(entryId) {
+            const btn = document.getElementById('favoriteBtn');
+            const icon = btn.querySelector('i');
+            const text = btn.querySelector('.btn-text');
+            
+            try {
+                const response = await fetch(`/api/favorite/${entryId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                
+                if (data.already_exists) {
+                    // Show confirmation modal
+                    pendingEntryId = entryId;
+                    document.getElementById('confirmCategory').textContent = data.existing_category || 'General';
+                    const dateEl = document.getElementById('confirmDate');
+                    dateEl.textContent = data.existing_date ? ` (saved ${data.existing_date})` : '';
+                    document.getElementById('confirmOverlay').classList.add('active');
+                    lucide.createIcons();
+                    return;
+                }
+
+                if (data.success) {
+                    if (data.is_favorite) {
+                        btn.classList.add('active');
+                        icon.classList.add('fill-current');
+                        text.innerText = 'Saved';
+                        showToast('Recipe added to your cookbook!', 'success');
+                    } else {
+                        btn.classList.remove('active');
+                        icon.classList.remove('fill-current');
+                        text.innerText = 'Save to Cookbook';
+                        showToast('Recipe removed from cookbook', 'info');
+                    }
+                }
+            } catch (error) {
+                console.error('Error toggling favorite:', error);
+            }
+        }
+
+        // Confirm replace existing recipe
+        async function confirmReplace() {
+            if (!pendingEntryId) return;
+            const btn = document.getElementById('favoriteBtn');
+            const icon = btn.querySelector('i');
+            const text = btn.querySelector('.btn-text');
+
+            try {
+                const response = await fetch(`/api/favorite/${pendingEntryId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ force: true })
+                });
+                const data = await response.json();
+
+                if (data.success && data.is_favorite) {
+                    btn.classList.add('active');
+                    icon.classList.add('fill-current');
+                    text.innerText = 'Saved';
+                    showToast('Recipe replaced in your cookbook!', 'success');
+                }
+            } catch (error) {
+                console.error('Error replacing favorite:', error);
+            }
+            
+            closeConfirmModal();
+            pendingEntryId = null;
+        }
+
+        // Close confirmation modal
+        function closeConfirmModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('confirmOverlay').classList.remove('active');
+            pendingEntryId = null;
+        }
+
+        // Custom Dropdown Logic
+        function toggleDropdown() {
+            const dropdown = document.getElementById('categoryDropdown');
+            dropdown.classList.toggle('open');
+            lucide.createIcons();
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('categoryDropdown');
+            if (dropdown && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('open');
+            }
+        });
+
+        // Select category from custom dropdown
+        async function selectCategory(item, entryId) {
+            const dropdown = document.getElementById('categoryDropdown');
+            const hiddenInput = document.getElementById('resultCategory');
+            const label = dropdown.querySelector('.dropdown-label');
+            const category = item.dataset.value;
+
+            // Update UI
+            dropdown.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            hiddenInput.value = category;
+            label.textContent = category;
+            dropdown.classList.remove('open');
+            lucide.createIcons();
+
+            // API call
+            try {
+                const response = await fetch(`/api/categorize/${entryId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(`Recipe saved to ${category}!`, 'success');
+                    const favBtn = document.getElementById('favoriteBtn');
+                    favBtn.classList.add('active');
+                    favBtn.querySelector('i').classList.add('fill-current');
+                    favBtn.querySelector('.btn-text').innerText = 'Saved';
+                }
+            } catch (error) {
+                console.error('Error updating category:', error);
+            }
+        }
+
+        // Simple Toast Notification
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'info'}" class="w-4 h-4"></i> ${message}`;
+            document.body.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }, 100);
+        }
+
+        // Animate cards on load
+        document.addEventListener('DOMContentLoaded', function () {
+            const cards = document.querySelectorAll('.results-card, .tips-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+
+            // Load nutrition data asynchronously
+            loadNutrition();
+            lucide.createIcons(); // Initialize initial icons
+        });
+    </script>
+</body>
+
+</html>

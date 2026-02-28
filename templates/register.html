@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Create your HealthRecipeAI account - Get personalized healthy recipe modifications.">
+    <title>Register - HealthRecipeAI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .password-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-input-wrapper .password-input {
+            padding-right: 3rem;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            transition: color 0.2s ease;
+            border-radius: 6px;
+        }
+
+        .password-toggle:hover {
+            color: #00b0b0;
+            background: rgba(0, 176, 176, 0.05);
+        }
+
+        .password-toggle:focus {
+            outline: 2px solid rgba(0, 176, 176, 0.3);
+            outline-offset: 2px;
+        }
+
+        .eye-icon {
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-page">
+        <div class="auth-container">
+            <!-- Logo -->
+            <div class="logo-header">
+                <a href="{{ url_for('landing_page') }}">
+                    <span class="logo-icon"><i data-lucide="salad" class="w-8 h-8"></i></span>
+                    <span class="logo-text">HealthRecipe<span class="logo-accent">AI</span></span>
+                </a>
+            </div>
+
+            <!-- Register Card -->
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1><i data-lucide="sparkles" class="inline-block mr-2" style="width: 1em; height: 1em;"></i> Create
+                        Your Account</h1>
+                    <p class="font-medium text-primary-600">Join thousands cooking healthier with AI</p>
+                </div>
+                <div class="auth-body">
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                        <span>{% if category == 'error' %}<i data-lucide="alert-triangle"
+                                class="inline-block w-4 h-4"></i>{% else %}<i data-lucide="check-circle"
+                                class="inline-block w-4 h-4"></i>{% endif %}</span>
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" action="{{ url_for('register') }}">
+                        {{ form.hidden_tag() }}
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="{{ form.username.id }}" class="form-label">
+                                    <span class="icon"><i data-lucide="user" class="w-4 h-4"></i></span>{{
+                                    form.username.label.text }}
+                                </label>
+                                {{ form.username(class="form-input", placeholder="Choose a username") }}
+                                {% if form.username.errors %}
+                                {% for error in form.username.errors %}
+                                <div class="error-text"><i data-lucide="alert-circle"
+                                        class="inline-block w-3 h-3 mr-1"></i> {{ error }}</div>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ form.email.id }}" class="form-label">
+                                    <span class="icon"><i data-lucide="mail" class="w-4 h-4"></i></span>{{
+                                    form.email.label.text }}
+                                </label>
+                                {{ form.email(class="form-input", placeholder="Enter your email") }}
+                                {% if form.email.errors %}
+                                {% for error in form.email.errors %}
+                                <div class="error-text"><i data-lucide="alert-circle"
+                                        class="inline-block w-3 h-3 mr-1"></i> {{ error }}</div>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="{{ form.password.id }}" class="form-label">
+                                    <span class="icon"><i data-lucide="lock" class="w-4 h-4"></i></span>{{
+                                    form.password.label.text }}
+                                </label>
+                                <div class="password-input-wrapper">
+                                    {{ form.password(class="form-input password-input", placeholder="Create a password")
+                                    }}
+                                    <button type="button" class="password-toggle"
+                                        onclick="togglePassword('{{ form.password.id }}', this)"
+                                        aria-label="Toggle password visibility">
+                                        <i data-lucide="eye" class="eye-icon eye-open"></i>
+                                        <i data-lucide="eye-off" class="eye-icon eye-closed" style="display: none;"></i>
+                                    </button>
+                                </div>
+                                {% if form.password.errors %}
+                                {% for error in form.password.errors %}
+                                <div class="error-text"><i data-lucide="alert-circle"
+                                        class="inline-block w-3 h-3 mr-1"></i> {{ error }}</div>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="{{ form.confirm_password.id }}" class="form-label">
+                                    <span class="icon"><i data-lucide="lock" class="w-4 h-4"></i></span>{{
+                                    form.confirm_password.label.text }}
+                                </label>
+                                <div class="password-input-wrapper">
+                                    {{ form.confirm_password(class="form-input password-input", placeholder="Confirm
+                                    password") }}
+                                    <button type="button" class="password-toggle"
+                                        onclick="togglePassword('{{ form.confirm_password.id }}', this)"
+                                        aria-label="Toggle password visibility">
+                                        <i data-lucide="eye" class="eye-icon eye-open"></i>
+                                        <i data-lucide="eye-off" class="eye-icon eye-closed" style="display: none;"></i>
+                                    </button>
+                                </div>
+                                {% if form.confirm_password.errors %}
+                                {% for error in form.confirm_password.errors %}
+                                <div class="error-text"><i data-lucide="alert-circle"
+                                        class="inline-block w-3 h-3 mr-1"></i> {{ error }}</div>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.medical_condition.id }}" class="form-label">
+                                <span class="icon"><i data-lucide="hospital" class="w-4 h-4"></i></span>{{
+                                form.medical_condition.label.text }}
+                            </label>
+                            {{ form.medical_condition(class="form-select") }}
+                            <div class="form-hint"><i data-lucide="info" class="inline-block w-3 h-3"></i> This helps us
+                                provide better recipe recommendations. You can
+                                change this later.</div>
+                            {% if form.medical_condition.errors %}
+                            {% for error in form.medical_condition.errors %}
+                            <div class="error-text"><i data-lucide="alert-circle" class="inline-block w-3 h-3 mr-1"></i>
+                                {{ error }}</div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn-submit">
+                            <i data-lucide="rocket" class="inline-block w-4 h-4 mr-2"></i> Start Cooking Healthier
+                        </button>
+                    </form>
+
+                    <div class="auth-divider"><span>or</span></div>
+
+                    <div class="auth-link-section">
+                        <p>Already have an account?</p>
+                        <a href="{{ url_for('login') }}" class="btn-secondary-auth">
+                            <i data-lucide="log-in" class="inline-block w-4 h-4 mr-2"></i> Sign In
+                        </a>
+                    </div>
+
+                    <div class="auth-link-section">
+                        <a href="{{ url_for('landing_page') }}" class="back-link">
+                            <i data-lucide="arrow-left" class="inline-block w-4 h-4 mr-1"></i> Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Cards -->
+            <div class="info-card warning">
+                <h4><i data-lucide="shield-check" class="inline-block w-5 h-5 mr-2 text-warning"></i> Password
+                    Requirements</h4>
+                <ul>
+                    <li><i data-lucide="check" class="inline-block w-3 h-3 mr-1"></i> At least 6 characters long</li>
+                    <li><i data-lucide="check" class="inline-block w-3 h-3 mr-1"></i> Must contain at least one letter
+                    </li>
+                    <li><i data-lucide="check" class="inline-block w-3 h-3 mr-1"></i> Must contain at least one number
+                    </li>
+                    <li><i data-lucide="check" class="inline-block w-3 h-3 mr-1"></i> Username: letters, numbers,
+                        underscores only</li>
+                </ul>
+            </div>
+
+            <div class="info-card info">
+                <h4><i data-lucide="lock" class="inline-block w-5 h-5 mr-2 text-info"></i> Privacy & Security</h4>
+                <ul>
+                    <li><i data-lucide="lock" class="inline-block w-3 h-3 mr-1"></i> Your password is securely hashed
+                    </li>
+                    <li><i data-lucide="hard-drive" class="inline-block w-3 h-3 mr-1"></i> Your data is stored securely
+                    </li>
+                    <li><i data-lucide="eye-off" class="inline-block w-3 h-3 mr-1"></i> We never share your personal
+                        information</li>
+                    <li><i data-lucide="heart-pulse" class="inline-block w-3 h-3 mr-1"></i> Your health data is kept
+                        private</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Toggle password visibility
+        function togglePassword(fieldId, button) {
+            const passwordField = document.getElementById(fieldId);
+            const eyeOpen = button.querySelectorAll('.eye-open');
+            const eyeClosed = button.querySelectorAll('.eye-closed');
+
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                eyeOpen.forEach(el => el.style.display = 'none');
+                eyeClosed.forEach(el => el.style.display = 'block');
+            } else {
+                passwordField.type = 'password';
+                eyeOpen.forEach(el => el.style.display = 'block');
+                eyeClosed.forEach(el => el.style.display = 'none');
+            }
+        }
+
+        // Add animation on load
+        document.addEventListener('DOMContentLoaded', function () {
+            const cards = document.querySelectorAll('.auth-card, .info-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+
+</html>

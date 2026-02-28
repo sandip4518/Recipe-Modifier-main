@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Health-Aware Recipe Modifier - Analyze your ingredients and get healthy alternatives.">
+    <title>Recipe Modifier - HealthRecipeAI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <div class="app-page">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="container">
+                <div class="header-left">
+                    <a href="{{ url_for('landing_page') }}" class="back-btn"><i data-lucide="arrow-left"
+                            class="inline-block w-4 h-4 mr-1"></i> Home</a>
+                </div>
+                <div class="header-title">
+                    <h1><i data-lucide="salad" class="inline-block w-8 h-8 mr-2 text-primary"></i> HealthRecipeAI
+                    </h1>
+                    <p>Eat what you love, without the health risks</p>
+                </div>
+                <div class="header-right">
+                    {% if current_user.is_authenticated %}
+                    <div class="user-info">
+                        <div class="username"><i data-lucide="user" class="inline-block w-4 h-4 mr-1"></i> {{
+                            current_user.username }}</div>
+                        {% if current_user.medical_condition %}
+                        <div class="condition"><i data-lucide="hospital" class="inline-block w-4 h-4 mr-1"></i> {{
+                            current_user.medical_condition.replace('_', ' ').title() }}</div>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('cookbook') }}" class="header-btn" style="display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap;"><i data-lucide="book-open" class="w-4 h-4" style="flex-shrink: 0;"></i>Meal Portfolio</a>
+                    <a href="{{ url_for('profile') }}" class="header-btn">Profile</a>
+                    <a href="{{ url_for('logout') }}" class="header-btn">Logout</a>
+                    {% else %}
+                    <a href="{{ url_for('login') }}" class="header-btn">Login</a>
+                    <a href="{{ url_for('register') }}" class="header-btn">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                    <span>{% if category == 'error' %}<i data-lucide="alert-triangle"
+                            class="inline-block w-4 h-4"></i>{% elif category == 'success' %}<i
+                            data-lucide="check-circle" class="inline-block w-4 h-4"></i>{% else %}<i data-lucide="info"
+                            class="inline-block w-4 h-4"></i>{% endif %}</span>
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                <!-- Section Intro -->
+                <div class="section-intro">
+                    <h2><i data-lucide="sprout" class="inline-block w-6 h-6 mr-2 text-primary"></i> Modify Your Recipe
+                    </h2>
+                    <p>Paste your ingredients or type a recipe name</p>
+                </div>
+
+                <!-- Main Form Card -->
+                <div class="main-card">
+                    <div class="card-header">
+                        <h3><i data-lucide="chef-hat" class="inline-block w-5 h-5 mr-2"></i> Ingredient Checker</h3>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('check_ingredients_route') }}" method="POST">
+                            <!-- Recipe Name -->
+                            <div class="form-section">
+                                <label for="recipeName" class="form-label">
+                                    <span class="icon"><i data-lucide="book-open" class="w-4 h-4"></i></span>Recipe Name
+                                    <small class="text-gray-500 font-normal">(Optional)</small>
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" class="form-input" id="recipeName" name="recipe_name"
+                                        placeholder="e.g., Banana Bread, Pancakes">
+                                    <button type="button" class="btn-ai" id="aiFillIngredients">
+                                        <i data-lucide="sparkles" class="inline-block w-4 h-4 mr-1"></i> AI Auto-Fill
+                                    </button>
+                                </div>
+                                <div class="form-hint"><i data-lucide="lightbulb" class="inline-block w-3 h-3 mr-1"></i>
+                                    Type a recipe name to auto-detect ingredients</div>
+                                <!-- Spell Check Suggestions -->
+                                <div id="spellSuggestions" class="spell-suggestion" style="display: none;">
+                                    <span class="spell-label">Did you mean:</span>
+                                    <span id="spellSuggestionLinks"></span>
+                                </div>
+                            </div>
+
+                            <!-- Ingredients -->
+                            <div class="form-section">
+                                <label for="ingredients" class="form-label">
+                                    <span class="icon"><i data-lucide="file-text" class="w-4 h-4"></i></span>Ingredients
+                                    List
+                                </label>
+                                <textarea class="form-textarea" id="ingredients" name="ingredients"
+                                    placeholder="Paste ingredients here (e.g., 2 cups flour, 1 cup sugar, 1/2 cup butter...)"
+                                    maxlength="2000" required></textarea>
+                                <div class="form-hint"><i data-lucide="info" class="inline-block w-3 h-3 mr-1"></i>
+                                    Separate ingredients with commas</div>
+                            </div>
+
+                            <!-- Profile Warnings Container (populated via JS) -->
+                            {% if current_user.is_authenticated %}
+                            <div id="profileWarningsContainer" class="profile-warnings-container" style="display: none;"></div>
+                            {% endif %}
+
+                            <!-- Condition -->
+                            {% if current_user.is_authenticated %}
+                            <div class="form-section">
+                                <label class="form-label">
+                                    <span class="icon"><i data-lucide="hospital" class="w-4 h-4"></i></span>Your Medical
+                                    Condition
+                                </label>
+                                <div class="condition-display">
+                                    <div class="icon"><i data-lucide="check" class="w-4 h-4"></i></div>
+                                    <div class="text">
+                                        <div class="label">Active condition</div>
+                                        <div class="value">{{ current_user.medical_condition.replace('_', ' ').title()
+                                            if current_user.medical_condition else 'Not specified' }}</div>
+                                    </div>
+                                    <a href="{{ url_for('profile') }}" class="link">Update →</a>
+                                </div>
+                                <input type="hidden" name="condition"
+                                    value="{{ current_user.medical_condition or 'diabetes' }}">
+                            </div>
+                            {% else %}
+                            <div class="form-section">
+                                <label for="condition" class="form-label">
+                                    <span class="icon"><i data-lucide="hospital" class="w-4 h-4"></i></span>Select
+                                    medical condition
+                                </label>
+                                <select class="form-select" id="condition" name="condition" required>
+                                    <option value="">Choose your condition...</option>
+                                    <option value="diabetes">Diabetes</option>
+                                    <option value="hypertension">Hypertension</option>
+                                    <option value="heart_disease">Heart Disease</option>
+                                    <option value="celiac">Celiac Disease</option>
+                                    <option value="gluten_intolerance">Gluten Intolerance</option>
+                                    <option value="lactose_intolerance">Lactose Intolerance</option>
+                                    <option value="egg_allergy">Egg Allergy</option>
+                                    <option value="peanut_allergy">Peanut Allergy</option>
+                                    <option value="soy_allergy">Soy Allergy</option>
+                                    <option value="corn_allergy">Corn Allergy</option>
+                                    <option value="obesity">Obesity</option>
+                                    <option value="cholesterol">High Cholesterol</option>
+                                </select>
+                            </div>
+                            {% endif %}
+
+                            <!-- Submit -->
+                            <button type="submit" class="btn-submit" id="submitBtn">
+                                <i data-lucide="sparkles" class="inline-block w-4 h-4 mr-2"></i> Make It Healthy
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Info Cards -->
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="icon"><i data-lucide="shield-check" class="w-8 h-8 text-primary"></i></div>
+                        <h4>Safe Ingredients</h4>
+                        <p>We identify harmful ingredients and suggest healthy alternatives</p>
+                    </div>
+                    <div class="info-card">
+                        <div class="icon"><i data-lucide="utensils" class="w-8 h-8 text-primary"></i></div>
+                        <h4>Modified Recipes</h4>
+                        <p>Get personalized recipes tailored to your health condition</p>
+                    </div>
+                </div>
+
+                <!-- Report Card -->
+                <div class="report-card">
+                    <div class="report-card-header">
+                        <h4><i data-lucide="bar-chart-3" class="inline-block w-5 h-5 mr-2"></i> Generate Your Report
+                        </h4>
+                        {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('generate_report', patient_id=current_user.user_id) }}" class="btn-report">
+                            <i data-lucide="file-text" class="inline-block w-4 h-4 mr-2"></i> Unlock Detailed Report
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('login') }}" class="btn-report">
+                            <i data-lucide="lock" class="inline-block w-4 h-4 mr-2"></i> Login to Save & Export Results
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p><i data-lucide="heart" class="inline-block w-4 h-4 text-red-500"></i> Nutritionist-validated auditing
+                logic</p>
+            <small>This tool is for educational purposes. Always consult with your healthcare provider.</small>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="loading-spinner-large"></div>
+            <h3 class="loading-title">Making Your Recipe Healthy</h3>
+            <p class="loading-message" id="loadingMessage">Analyzing ingredients...</p>
+            <div class="loading-progress">
+                <div class="loading-progress-bar" id="loadingProgressBar"></div>
+            </div>
+            <p class="loading-eta">Estimated time: <span id="loadingEta">5-10 seconds</span></p>
+        </div>
+    </div>
+
+    <!-- Warning Confirmation Modal -->
+    <div id="warningConfirmModal" class="confirm-overlay" style="display: none;">
+        <div class="confirm-card">
+            <div class="confirm-icon-wrap">
+                <div class="confirm-icon-circle">
+                    <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+                </div>
+            </div>
+            <h3 class="confirm-title">Profile Warnings Detected</h3>
+            <p class="confirm-subtitle">This recipe conflicts with your profile preferences:</p>
+            <div class="confirm-warnings-list" id="confirmWarningsList"></div>
+            <p class="confirm-question">Are you sure you want to proceed anyway?</p>
+            <div class="confirm-buttons">
+                <button type="button" class="confirm-btn confirm-btn-back" id="confirmGoBack">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Go Back & Edit
+                </button>
+                <button type="button" class="confirm-btn confirm-btn-proceed" id="confirmProceed">
+                    Proceed Anyway <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .loading-content {
+            text-align: center;
+            padding: 3rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            max-width: 400px;
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading-spinner-large {
+            width: 80px;
+            height: 80px;
+            border: 6px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-title {
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .loading-message {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            min-height: 24px;
+        }
+
+        .loading-progress {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .loading-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #fff, #f0f0f0);
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        .loading-eta {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.875rem;
+        }
+
+        /* Profile Warnings Styles */
+        .profile-warnings-container {
+            margin: 1rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .profile-warning-card {
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.875rem;
+            animation: warningSlideIn 0.4s ease-out;
+            position: relative;
+            overflow: hidden;
+            border-left: 4px solid;
+        }
+
+        .profile-warning-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            opacity: 0.05;
+            pointer-events: none;
+        }
+
+        @keyframes warningSlideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .profile-warning-card.danger {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            border-left-color: #ef4444;
+        }
+
+        .profile-warning-card.warning {
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            border-left-color: #f59e0b;
+        }
+
+        .profile-warning-card.info {
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            border-left-color: #3b82f6;
+        }
+
+        .pw-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .profile-warning-card.danger .pw-icon {
+            background: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+        }
+
+        .profile-warning-card.warning .pw-icon {
+            background: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+        }
+
+        .profile-warning-card.info .pw-icon {
+            background: rgba(59, 130, 246, 0.15);
+            color: #2563eb;
+        }
+
+        .pw-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pw-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-warning-card.danger .pw-title { color: #991b1b; }
+        .profile-warning-card.warning .pw-title { color: #92400e; }
+        .profile-warning-card.info .pw-title { color: #1e40af; }
+
+        .pw-message {
+            font-size: 0.825rem;
+            line-height: 1.5;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-warning-card.danger .pw-message { color: #7f1d1d; }
+        .profile-warning-card.warning .pw-message { color: #78350f; }
+        .profile-warning-card.info .pw-message { color: #1e3a5f; }
+
+        .pw-ingredients {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375rem;
+        }
+
+        .pw-ingredient-tag {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .profile-warning-card.danger .pw-ingredient-tag {
+            background: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+        }
+
+        .profile-warning-card.warning .pw-ingredient-tag {
+            background: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+        }
+
+        .profile-warning-card.info .pw-ingredient-tag {
+            background: rgba(59, 130, 246, 0.15);
+            color: #2563eb;
+        }
+
+        .pw-dismiss {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: opacity 0.2s;
+            padding: 0.25rem;
+            line-height: 0;
+        }
+
+        .pw-dismiss:hover { opacity: 0.8; }
+
+        .pw-loading {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 176, 176, 0.08);
+            border-radius: 10px;
+            color: #00b0b0;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* Confirmation Modal Styles */
+        .confirm-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(6px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            animation: confirmFadeIn 0.25s ease;
+        }
+
+        @keyframes confirmFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .confirm-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem 2rem 2rem;
+            max-width: 460px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+            animation: confirmSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        @keyframes confirmSlideUp {
+            from { opacity: 0; transform: translateY(40px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .confirm-icon-wrap {
+            margin-bottom: 1.25rem;
+        }
+
+        .confirm-icon-circle {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #d97706;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
+            animation: iconPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25); }
+            50% { box-shadow: 0 4px 25px rgba(245, 158, 11, 0.45); }
+        }
+
+        .confirm-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 0.35rem;
+        }
+
+        .confirm-subtitle {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 1rem;
+        }
+
+        .confirm-warnings-list {
+            text-align: left;
+            max-height: 180px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 0 0.25rem;
+        }
+
+        .confirm-warning-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.6rem 0.85rem;
+            border-radius: 10px;
+            font-size: 0.825rem;
+            font-weight: 600;
+        }
+
+        .confirm-warning-item.danger {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .confirm-warning-item.warning {
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fde68a;
+        }
+
+        .confirm-warning-item.info {
+            background: #eff6ff;
+            color: #2563eb;
+            border: 1px solid #bfdbfe;
+        }
+
+        .confirm-warning-item i {
+            flex-shrink: 0;
+        }
+
+        .confirm-question {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 1.25rem;
+        }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .confirm-btn {
+            flex: 1;
+            padding: 0.85rem 1.25rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .confirm-btn-back {
+            background: #f1f5f9;
+            color: #475569;
+            border: 2px solid #e2e8f0;
+        }
+
+        .confirm-btn-back:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+
+        .confirm-btn-proceed {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .confirm-btn-proceed:hover {
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+            transform: translateY(-1px);
+        }
+
+        .pw-loading .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0, 176, 176, 0.2);
+            border-top-color: #00b0b0;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+    </style>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const ingredientsTextarea = document.getElementById("ingredients");
+            const conditionSelect = document.getElementById("condition");
+            const recipeInput = document.getElementById("recipeName");
+            const aiFillButton = document.getElementById("aiFillIngredients");
+            const form = document.querySelector("form");
+            const submitBtn = document.getElementById("submitBtn");
+            const spellSuggestionsDiv = document.getElementById("spellSuggestions");
+            const spellSuggestionLinks = document.getElementById("spellSuggestionLinks");
+
+            // Auto-resize textarea + debounced profile warning check
+            let profileWarningTimeout = null;
+            ingredientsTextarea.addEventListener("input", function () {
+                this.style.height = "auto";
+                this.style.height = this.scrollHeight + "px";
+                // Debounce profile warning checks (800ms after typing stops)
+                if (profileWarningTimeout) clearTimeout(profileWarningTimeout);
+                profileWarningTimeout = setTimeout(() => checkProfileWarnings(), 800);
+            });
+
+            // Placeholder based on condition
+            if (conditionSelect) {
+                conditionSelect.addEventListener("change", function () {
+                    const condition = this.value;
+                    let placeholder = "Enter ingredients separated by commas (e.g., sugar, flour, butter, banana)";
+                    if (condition === "diabetes") {
+                        placeholder += " - We'll replace sugar with stevia!";
+                    } else if (condition === "hypertension") {
+                        placeholder = "Enter ingredients (e.g., salt, butter, flour) - We'll replace salt with low-sodium alternatives!";
+                    } else if (condition === "celiac") {
+                        placeholder = "Enter ingredients (e.g., flour, wheat) - We'll replace gluten-containing ingredients!";
+                    }
+                    ingredientsTextarea.placeholder = placeholder;
+                });
+            }
+
+            // AI Auto-Fill
+            if (aiFillButton) {
+                aiFillButton.addEventListener("click", async function () {
+                    if (spellSuggestionsDiv) spellSuggestionsDiv.style.display = "none";
+                    const sourceText = (recipeInput && recipeInput.value.trim()) || ingredientsTextarea.value.trim();
+                    if (!sourceText) {
+                        (recipeInput || ingredientsTextarea).focus();
+                        return;
+                    }
+
+                    aiFillButton.disabled = true;
+                    const originalHtml = aiFillButton.innerHTML;
+                    aiFillButton.innerHTML = '<span class="spinner"></span> Filling...';
+
+                    try {
+                        const resp = await fetch("/api/ai/extract-ingredients", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ text: sourceText }),
+                        });
+                        const data = await resp.json();
+                        const ingredients = Array.isArray(data.ingredients) ? data.ingredients : [];
+
+                        if (ingredients.length > 0) {
+                            ingredientsTextarea.value = ingredients.join(", ");
+                            ingredientsTextarea.dispatchEvent(new Event("input"));
+                        } else if (recipeInput && recipeInput.value.trim()) {
+                            const dbResp = await fetch(`/api/recipes/ingredients?name=${encodeURIComponent(recipeInput.value.trim())}`);
+                            const dbData = await dbResp.json();
+                            const dbIngredients = Array.isArray(dbData.ingredients) ? dbData.ingredients : [];
+                            ingredientsTextarea.value = dbIngredients.length > 0
+                                ? dbIngredients.join(", ")
+                                : "No ingredients found. Please type them manually.";
+                            ingredientsTextarea.dispatchEvent(new Event("input"));
+                        } else {
+                            ingredientsTextarea.value = "No ingredients found. Please type them manually.";
+                            ingredientsTextarea.dispatchEvent(new Event("input"));
+                        }
+                    } catch (error) {
+                        ingredientsTextarea.value = "Unable to fetch ingredients. Please try again or type them manually.";
+                        ingredientsTextarea.dispatchEvent(new Event("input"));
+                    } finally {
+                        aiFillButton.disabled = false;
+                        aiFillButton.innerHTML = originalHtml;
+                        // Check profile warnings after AI fill
+                        checkProfileWarnings();
+                    }
+                });
+            }
+
+            // Spell Check for Recipe Name
+
+            let spellCheckTimeout = null;
+
+            if (recipeInput && spellSuggestionsDiv && spellSuggestionLinks) {
+                recipeInput.addEventListener("input", function () {
+                    // Clear previous timeout
+                    if (spellCheckTimeout) clearTimeout(spellCheckTimeout);
+
+                    const recipeName = this.value.trim();
+
+                    // Hide suggestions if input is too short
+                    if (recipeName.length < 2) {
+                        spellSuggestionsDiv.style.display = "none";
+                        return;
+                    }
+
+                    // Debounce: wait 400ms after user stops typing
+                    spellCheckTimeout = setTimeout(async () => {
+                        try {
+                            const resp = await fetch("/api/spell-check", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ recipe_name: recipeName })
+                            });
+                            const data = await resp.json();
+
+                            // Show suggestions if not correct and suggestions exist
+                            if (!data.is_correct && data.suggestions && data.suggestions.length > 0) {
+                                spellSuggestionLinks.innerHTML = data.suggestions.map(s =>
+                                    `<a href="#" class="spell-link" data-recipe="${s}">${s}</a>`
+                                ).join(", ");
+                                spellSuggestionsDiv.style.display = "block";
+                            } else {
+                                spellSuggestionsDiv.style.display = "none";
+                            }
+                        } catch (error) {
+                            console.error("Spell check error:", error);
+                            spellSuggestionsDiv.style.display = "none";
+                        }
+                    }, 400);
+                });
+
+                // Click handler for spell suggestions
+                spellSuggestionLinks.addEventListener("click", function (e) {
+                    if (e.target.classList.contains("spell-link")) {
+                        e.preventDefault();
+                        const correctedName = e.target.dataset.recipe;
+                        recipeInput.value = correctedName;
+                        spellSuggestionsDiv.style.display = "none";
+                        recipeInput.focus();
+                    }
+                });
+            }
+
+            // Track if user confirmed the warning
+            let warningConfirmed = false;
+
+            // Form submit loading with client-side validation
+            if (form && submitBtn) {
+                form.addEventListener("submit", function (e) {
+                    // Client-side validation
+                    const ingredientsValue = ingredientsTextarea.value.trim();
+
+                    // Check if ingredients field is empty
+                    if (!ingredientsValue) {
+                        e.preventDefault();
+                        ingredientsTextarea.focus();
+                        alert('Please enter at least one ingredient.');
+                        return false;
+                    }
+
+                    // Check if ingredients length exceeds limit
+                    if (ingredientsValue.length > 2000) {
+                        e.preventDefault();
+                        ingredientsTextarea.focus();
+                        alert('Ingredients text is too long. Please limit to 2000 characters.');
+                        return false;
+                    }
+
+                    // Check if condition is selected (for non-authenticated users)
+                    if (conditionSelect && !conditionSelect.value) {
+                        e.preventDefault();
+                        conditionSelect.focus();
+                        alert('Please select a medical condition.');
+                        return false;
+                    }
+
+                    // --- Check for active profile warnings ---
+                    if (!warningConfirmed && warningsContainer && warningsContainer.style.display !== 'none') {
+                        const activeWarnings = warningsContainer.querySelectorAll('.profile-warning-card');
+                        if (activeWarnings.length > 0) {
+                            e.preventDefault();
+                            showWarningConfirmation(activeWarnings);
+                            return false;
+                        }
+                    }
+
+                    // Prevent double submission
+                    if (submitBtn.dataset.submitting === "true") return false;
+                    submitBtn.dataset.submitting = "true";
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner"></span> Processing...';
+                    if (aiFillButton) aiFillButton.disabled = true;
+
+                    // Reset confirmed flag for next use
+                    warningConfirmed = false;
+
+                    // Show loading overlay with progress simulation
+                    showLoadingOverlay();
+                });
+            }
+
+            // Show the confirmation modal with active warning summaries
+            function showWarningConfirmation(activeWarnings) {
+                const modal = document.getElementById('warningConfirmModal');
+                const listEl = document.getElementById('confirmWarningsList');
+
+                // Build warning summary list
+                let listHtml = '';
+                activeWarnings.forEach(card => {
+                    const title = card.querySelector('.pw-title')?.textContent || 'Warning';
+                    const severity = card.classList.contains('danger') ? 'danger'
+                                   : card.classList.contains('warning') ? 'warning' : 'info';
+                    const iconName = severity === 'danger' ? 'shield-alert'
+                                   : severity === 'warning' ? 'alert-triangle' : 'info';
+                    listHtml += `<div class="confirm-warning-item ${severity}">
+                        <i data-lucide="${iconName}" class="w-4 h-4"></i>
+                        <span>${title}</span>
+                    </div>`;
+                });
+                listEl.innerHTML = listHtml;
+
+                // Show modal
+                modal.style.display = 'flex';
+                lucide.createIcons();
+
+                // Focus the Go Back button for accessibility
+                setTimeout(() => document.getElementById('confirmGoBack').focus(), 100);
+            }
+
+            // Go Back button - close modal
+            document.getElementById('confirmGoBack')?.addEventListener('click', function () {
+                document.getElementById('warningConfirmModal').style.display = 'none';
+                warningConfirmed = false;
+            });
+
+            // Proceed Anyway button - set flag and re-submit
+            document.getElementById('confirmProceed')?.addEventListener('click', function () {
+                document.getElementById('warningConfirmModal').style.display = 'none';
+                warningConfirmed = true;
+                // Trigger the form submit again (this time warningConfirmed = true so it passes through)
+                form.requestSubmit(submitBtn);
+            });
+
+            // Close modal on overlay click (outside card)
+            document.getElementById('warningConfirmModal')?.addEventListener('click', function (e) {
+                if (e.target === this) {
+                    this.style.display = 'none';
+                    warningConfirmed = false;
+                }
+            });
+
+            // Close modal on Escape key
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('warningConfirmModal');
+                    if (modal && modal.style.display !== 'none') {
+                        modal.style.display = 'none';
+                        warningConfirmed = false;
+                    }
+                }
+            });
+
+            // Loading overlay progress simulation
+            function showLoadingOverlay() {
+                const overlay = document.getElementById('loadingOverlay');
+                const message = document.getElementById('loadingMessage');
+                const progressBar = document.getElementById('loadingProgressBar');
+                const eta = document.getElementById('loadingEta');
+
+                overlay.style.display = 'flex';
+
+                // Progress stages with realistic timing
+                const stages = [
+                    { progress: 15, message: 'Analyzing ingredients...', eta: '8-12 seconds', delay: 500 },
+                    { progress: 30, message: 'Checking database for harmful ingredients...', eta: '6-10 seconds', delay: 1500 },
+                    { progress: 50, message: 'Finding healthy alternatives...', eta: '4-8 seconds', delay: 2500 },
+                    { progress: 70, message: 'Generating personalized recipe...', eta: '2-5 seconds', delay: 4000 },
+                    { progress: 90, message: 'Finalizing your healthy recipe...', eta: '1-2 seconds', delay: 6000 }
+                ];
+
+                stages.forEach(stage => {
+                    setTimeout(() => {
+                        progressBar.style.width = stage.progress + '%';
+                        message.textContent = stage.message;
+                        eta.textContent = stage.eta;
+                    }, stage.delay);
+                });
+            }
+
+            // --- Profile Warnings System ---
+            const warningsContainer = document.getElementById('profileWarningsContainer');
+            let lastWarningIngredients = '';
+
+            async function checkProfileWarnings() {
+                if (!warningsContainer) return; // Not logged in
+
+                const rawText = ingredientsTextarea.value.trim();
+                if (!rawText || rawText.length < 3) {
+                    warningsContainer.style.display = 'none';
+                    warningsContainer.innerHTML = '';
+                    lastWarningIngredients = '';
+                    return;
+                }
+
+                // Parse ingredients from textarea
+                const ingredients = rawText.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
+                const ingredientsKey = ingredients.join(',');
+
+                // Skip if same ingredients as last check
+                if (ingredientsKey === lastWarningIngredients) return;
+                lastWarningIngredients = ingredientsKey;
+
+                // Show loading state
+                warningsContainer.style.display = 'block';
+                warningsContainer.innerHTML = '<div class="pw-loading"><div class="spinner"></div> Checking against your profile...</div>';
+
+                try {
+                    const resp = await fetch('/api/profile-warnings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ingredients })
+                    });
+                    const data = await resp.json();
+                    const warnings = data.warnings || [];
+
+                    if (warnings.length === 0) {
+                        warningsContainer.style.display = 'none';
+                        warningsContainer.innerHTML = '';
+                        return;
+                    }
+
+                    // Render warning cards
+                    let html = '';
+                    warnings.forEach((w, idx) => {
+                        const iconName = w.icon || 'alert-triangle';
+                        const ingredientTags = (w.ingredients || [])
+                            .map(ing => `<span class="pw-ingredient-tag"><i data-lucide="x" class="w-3 h-3"></i>${ing}</span>`)
+                            .join('');
+
+                        html += `<div class="profile-warning-card ${w.severity}" style="animation-delay: ${idx * 0.1}s">
+                            <div class="pw-icon"><i data-lucide="${iconName}" class="w-5 h-5"></i></div>
+                            <div class="pw-content">
+                                <div class="pw-title">${w.title}</div>
+                                <div class="pw-message">${w.message}</div>
+                                ${ingredientTags ? `<div class="pw-ingredients">${ingredientTags}</div>` : ''}
+                            </div>
+                            <button type="button" class="pw-dismiss" onclick="this.parentElement.remove(); checkWarningsVisibility();" aria-label="Dismiss">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>`;
+                    });
+
+                    warningsContainer.innerHTML = html;
+                    warningsContainer.style.display = 'flex';
+                    lucide.createIcons();
+
+                } catch (error) {
+                    console.error('Profile warnings error:', error);
+                    warningsContainer.style.display = 'none';
+                    warningsContainer.innerHTML = '';
+                }
+            }
+
+            // Hide container when all warnings are dismissed
+            window.checkWarningsVisibility = function() {
+                if (warningsContainer && warningsContainer.children.length === 0) {
+                    warningsContainer.style.display = 'none';
+                }
+            };
+        });
+    </script>
+</body>
+
+</html>
