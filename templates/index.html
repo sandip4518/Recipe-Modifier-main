@@ -1069,6 +1069,23 @@
                     warningsContainer.style.display = 'none';
                 }
             };
+
+            // Handle back button navigation (bfcache) to hide spinner
+            window.addEventListener("pageshow", function(event) {
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) overlay.style.display = 'none';
+                
+                if (submitBtn) {
+                    submitBtn.dataset.submitting = "false";
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i data-lucide="sparkles" class="inline-block w-4 h-4 mr-2"></i> Make It Healthy';
+                    lucide.createIcons(); // Re-initialize icons inside button
+                }
+                
+                if (aiFillButton) {
+                    aiFillButton.disabled = false;
+                }
+            });
         });
     </script>
 </body>

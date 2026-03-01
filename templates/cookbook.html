@@ -93,7 +93,9 @@
                         <div class="empty-icon"><i data-lucide="book-open" class="w-16 h-16"></i></div>
                         <h2>Your Cookbook is Empty</h2>
                         <p>Star recipes from your results page to build your personal healthy cookbook.</p>
-                        <a href="{{ url_for('index') }}" class="btn-primary">Start Exploring</a>
+                        <a href="{{ url_for('index') }}" class="btn btn-primary" style="text-decoration: none;">
+                            <i data-lucide="compass" class="w-4 h-4"></i> Start Exploring
+                        </a>
                     </div>
                     {% endif %}
                 </div>
@@ -1153,6 +1155,7 @@
         }
 
         .btn-primary {
+            
             background: var(--gradient-primary);
             color: white;
             box-shadow: var(--shadow-md), 0 0 20px rgba(0, 176, 176, 0.2);
