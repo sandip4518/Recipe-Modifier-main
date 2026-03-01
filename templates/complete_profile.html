@@ -248,6 +248,88 @@
             margin-top: 0.25rem;
         }
 
+        /* Custom Select Enhancements */
+        .custom-select-wrapper {
+            position: relative;
+            user-select: none;
+            width: 100%;
+        }
+
+        .custom-select-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            background: white;
+            cursor: pointer;
+            color: #374151;
+        }
+
+        .custom-select-wrapper.open .custom-select-trigger {
+            border-color: #00b0b0;
+            box-shadow: 0 0 0 3px rgba(0, 176, 176, 0.1);
+        }
+
+        .custom-select-wrapper.open .custom-select-trigger i {
+            transform: rotate(180deg);
+        }
+        
+        .custom-select-trigger i {
+            transition: transform 0.3s ease;
+            color: #6b7280;
+        }
+
+        .custom-select-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 0.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .custom-select-wrapper.open .custom-select-options {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .custom-select-option {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.95rem;
+            color: #374151;
+        }
+
+        .custom-select-option:hover {
+            background: rgba(0, 176, 176, 0.05);
+            color: #00b0b0;
+        }
+
+        .custom-select-option.selected {
+            font-weight: 600;
+            color: #00b0b0;
+            background: rgba(0, 176, 176, 0.1);
+        }
+
         .form-buttons {
             display: flex;
             gap: 1rem;
@@ -562,7 +644,7 @@
                             <span class="icon"><i data-lucide="utensils" class="w-4 h-4"></i></span>{{
                             form.diet_type.label.text }}
                         </label>
-                        {{ form.diet_type(class="form-input", placeholder="e.g. Vegetarian, Keto (Optional)") }}
+                        {{ form.diet_type(class="form-select") }}
                         <div class="input-hint">Specific dietary preferences</div>
                         {% if form.diet_type.errors %}
                         {% for error in form.diet_type.errors %}
@@ -1061,6 +1143,68 @@
                     }
                 });
             }
+
+            // Custom Select Dropdown logic
+            const selects = document.querySelectorAll('.form-select');
+            selects.forEach(select => {
+                select.style.display = 'none';
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'custom-select-wrapper';
+
+                const trigger = document.createElement('div');
+                trigger.className = 'custom-select-trigger';
+                const selectedOption = select.options[select.selectedIndex];
+                const initialText = selectedOption ? selectedOption.text : 'Select an option...';
+                
+                trigger.innerHTML = `<span>${initialText}</span> <i data-lucide="chevron-down" class="w-4 h-4 ml-auto pointer-events-none"></i>`;
+
+                const optionsDiv = document.createElement('div');
+                optionsDiv.className = 'custom-select-options';
+
+                Array.from(select.options).forEach((option, index) => {
+                    const optDiv = document.createElement('div');
+                    optDiv.className = 'custom-select-option';
+                    if(option.selected && option.value !== "") {
+                        optDiv.classList.add('selected');
+                    }
+                    optDiv.textContent = option.text;
+                    optDiv.dataset.value = option.value;
+                    optDiv.dataset.index = index;
+
+                    optDiv.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        select.selectedIndex = optDiv.dataset.index;
+                        select.dispatchEvent(new Event('change'));
+                        trigger.querySelector('span').textContent = option.text;
+                        wrapper.classList.remove('open');
+                        
+                        optionsDiv.querySelectorAll('.custom-select-option').forEach(el => el.classList.remove('selected'));
+                        optDiv.classList.add('selected');
+                    });
+                    optionsDiv.appendChild(optDiv);
+                });
+
+                wrapper.appendChild(trigger);
+                wrapper.appendChild(optionsDiv);
+                select.parentNode.insertBefore(wrapper, select.nextSibling);
+
+                trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.custom-select-wrapper').forEach(w => {
+                        if (w !== wrapper) w.classList.remove('open');
+                    });
+                    wrapper.classList.toggle('open');
+                });
+            });
+
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.custom-select-wrapper').forEach(w => w.classList.remove('open'));
+            });
+            
+            // Re-initialize lucide icons for custom selects
+            lucide.createIcons();
+            
         });
     </script>
 </body>

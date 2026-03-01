@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SelectField, SubmitField, BooleanField, IntegerField
+from wtforms import StringField, PasswordField, SelectField, RadioField, SubmitField, BooleanField, IntegerField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, NumberRange, Optional
 import re
 
@@ -167,7 +167,18 @@ class ProfileCompletionForm(FlaskForm):
                         ],
                         validators=[DataRequired(message='Please select your gender')])
     
-    diet_type = StringField('Diet Type (Optional)', validators=[Optional(), Length(max=50)])
+    diet_type = SelectField('Diet Type', 
+                          choices=[
+                              ('', 'Select your diet type'),
+                              ('none', 'No specific diet'),
+                              ('vegetarian', 'Vegetarian'),
+                              ('vegan', 'Vegan'),
+                              ('keto', 'Keto'),
+                              ('paleo', 'Paleo'),
+                              ('pescatarian', 'Pescatarian'),
+                              ('mediterranean', 'Mediterranean')
+                          ],
+                          validators=[DataRequired(message='Please select a diet type')])
     
     allergies = StringField('Allergies (Optional)', validators=[Optional(), Length(max=200)])
     
@@ -178,12 +189,12 @@ class ProfileCompletionForm(FlaskForm):
     
     goal = SelectField('Fitness Goal', 
                       choices=[
-                          ('', 'Select your goal'),
                           ('lose_weight', '🔥 Lose Weight'),
                           ('gain_muscle', '💪 Gain Muscle'),
                           ('maintain_fitness', '⚖️ Maintain Fitness'),
                           ('improve_health', '❤️ Improve Overall Health')
                       ],
+                      default='maintain_fitness',
                       validators=[DataRequired(message='Please select a fitness goal')])
     
     submit = SubmitField('Complete Profile')
