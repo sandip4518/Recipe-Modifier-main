@@ -242,6 +242,38 @@ class MLService:
         
         return notes
 
+    def estimate_recipe_cost(self, ingredients):
+        """Estimate the cost of a recipe based on ingredients in INR"""
+        base_prices = {
+            'almond flour': 65, 'white flour': 12, 'sugar': 8, 
+            'erythritol': 50, 'stevia': 40, 'butter': 35,
+            'olive oil': 30, 'coconut oil': 35, 'egg': 20,
+            'milk': 12, 'almond milk': 20, 'chicken': 120,
+            'beef': 200, 'tofu': 80, 'paneer': 95, 'salmon': 280,
+            'salt': 4, 'pepper': 4, 'honey': 40,
+            'maple syrup': 55, 'avocado': 120, 'spinach': 65,
+            'tomato': 50, 'onion': 35, 'garlic': 25,
+        }
+        
+        total_cost = 0.0
+        
+        for ing in ingredients:
+            ing_lower = ing.lower().strip()
+            matched_price = 40.0 # Default generic price in INR (approx $0.50)
+            
+            for key, price in base_prices.items():
+                if key in ing_lower:
+                    matched_price = price
+                    break
+                    
+            total_cost += matched_price
+            
+        usd_equivalent = total_cost / 80.0
+        return {
+            "total_cost": round(total_cost, 2),
+            "budget_score": max(1, min(10, 10 - int(usd_equivalent / 2))) # Scale 1-10 based on USD equivalent
+        }
+
     def get_recipe_details(self, recipe_key, condition, user_profile=None):
         """Get recipe details (ingredients and instructions) for a condition"""
         if recipe_key not in self.recipe_data:

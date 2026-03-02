@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ recipe.recipe_name if recipe.recipe_name else 'Cooking Mode' }} - HealthRecipeAI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --cook-bg: #1e1e24;
+            --cook-surface: #2b2b36;
+            --cook-text: #f8f9fa;
+            --cook-text-muted: #adb5bd;
+            --cook-primary: #0ea5e9;
+            --cook-accent: #10b981;
+            --space-2: 0.5rem;
+            --space-4: 1rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--cook-bg);
+            color: var(--cook-text);
+            line-height: 1.6;
+            font-size: 18px; /* Larger base font for tablet/mobile readability */
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .cook-header {
+            position: sticky;
+            top: 0;
+            background-color: rgba(30, 30, 36, 0.95);
+            backdrop-filter: blur(10px);
+            padding: var(--space-4) var(--space-6);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 100;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--cook-text);
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-lg);
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .wake-lock-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--cook-accent);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-lg);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .wake-lock-btn.active {
+            background: var(--cook-accent);
+            color: white;
+        }
+
+        .cook-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: var(--space-8) var(--space-4);
+        }
+
+        .recipe-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 0 0 1rem 0;
+            background: linear-gradient(90deg, #0ea5e9, #10b981);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .recipe-meta {
+            color: var(--cook-text-muted);
+            font-size: 1rem;
+            margin-bottom: var(--space-8);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .section-card {
+            background: var(--cook-surface);
+            border-radius: var(--radius-xl);
+            padding: var(--space-6);
+            margin-bottom: var(--space-8);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 var(--space-4) 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--cook-primary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.75rem;
+        }
+
+        /* Lists */
+        .cooking-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .cooking-list li {
+            position: relative;
+            padding-left: 2.5rem;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+            line-height: 1.5;
+        }
+
+        .ingredients-list li::before {
+            content: "";
+            position: absolute;
+            left: 0.5rem;
+            top: 0.6rem;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--cook-accent);
+        }
+
+        .instructions-list {
+            counter-reset: step;
+        }
+
+        .instructions-list li {
+            padding-left: 3.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.35rem; /* Even larger for instructions */
+        }
+
+        .instructions-list li::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 2.2rem;
+            height: 2.2rem;
+            border-radius: 50%;
+            background: var(--cook-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .strike {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+
+        .interactive-item {
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .interactive-item:hover {
+            opacity: 0.8;
+        }
+
+        /* Checkbox styling for ingredients */
+        .ing-check-wrap {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+            padding: 0.5rem;
+            border-radius: var(--radius-lg);
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+        
+        .ing-check-wrap:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .ing-check-wrap input[type="checkbox"] {
+            width: 1.5rem;
+            height: 1.5rem;
+            accent-color: var(--cook-accent);
+            cursor: pointer;
+        }
+
+        /* Misc */
+        b, strong {
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .cook-container {
+                padding: var(--space-4);
+            }
+            .recipe-title {
+                font-size: 2rem;
+            }
+            body {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="cookbook-header" style="background: var(--cook-bg); border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div class="header-left">
+                <a href="{{ url_for('cookbook') }}" class="btn-glass back-btn" style="background: rgba(255, 255, 255, 0.1);">
+                    <i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i> Back
+                </a>
+                <div class="header-title" style="margin-left: 1rem;">
+                    <h1 style="font-size: 1.25rem; margin: 0; color: white;">Cooking Mode</h1>
+                </div>
+            </div>
+            <div class="header-right">
+                <button id="wakeLockBtn" class="btn-glass wake-lock-btn" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.3); color: var(--cook-accent);">
+                    <i data-lucide="monitor" class="w-5 h-5 mr-2"></i> <span id="wakeLockText">Keep Screen On</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="cook-container">
+        <h1 class="recipe-title">{{ recipe.recipe_name if recipe.recipe_name else 'Custom Recipe' }}</h1>
+        <div class="recipe-meta">
+            <span><i data-lucide="heart" class="inline-block w-4 h-4 mr-1"></i> {{ recipe.condition.replace('_', ' ').title() }} Optimized</span>
+        </div>
+
+        <div class="section-card">
+            <h2 class="section-title"><i data-lucide="shopping-basket" class="w-6 h-6"></i> Ingredients</h2>
+            <div id="ingredientsList">
+                {% if recipe.safe %}
+                    {% for ing in recipe.safe %}
+                    <label class="ing-check-wrap">
+                        <input type="checkbox" onchange="toggleStrike(this)">
+                        <span class="ing-text">{{ ing }}</span>
+                    </label>
+                    {% endfor %}
+                {% else %}
+                    <!-- Fallback if array not present -->
+                    {% for ing in recipe.input_ingredients %}
+                    <label class="ing-check-wrap">
+                        <input type="checkbox" onchange="toggleStrike(this)">
+                        <span class="ing-text">{{ ing }}</span>
+                    </label>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="section-card">
+            <h2 class="section-title"><i data-lucide="chef-hat" class="w-6 h-6"></i> Instructions</h2>
+            <ol class="cooking-list instructions-list" id="instructionsList">
+                <!-- Javascript will populate this safely -->
+            </ol>
+        </div>
+        
+        <script id="recipe-data" type="application/json">
+            {{ recipe.recipe | tojson | safe }}
+        </script>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // 1. Process Recipe Text into Instructions
+        try {
+            const rawText = JSON.parse(document.getElementById('recipe-data').textContent || '""');
+            const lines = rawText.split('\n');
+            const instructionsList = document.getElementById('instructionsList');
+            
+            let inInstructions = false;
+            let stepCount = 0;
+            
+            for (let i = 0; i < lines.length; i++) {
+                let text = lines[i].trim();
+                if (!text) continue;
+                
+                // Remove bold markers around headings
+                text = text.replace(/^\*\*(.*?)\*\*:?$/, '$1');
+                
+                // Detect section change
+                const lowerText = text.toLowerCase();
+                if (lowerText.includes('instruction') || lowerText.includes('steps') || lowerText.includes('method') || lowerText.includes('directions')) {
+                    inInstructions = true;
+                    continue;
+                } else if (inInstructions && (lowerText.includes('health') || lowerText.includes('nutrition') || lowerText.includes('tip') || lowerText.includes('serving'))) {
+                    inInstructions = false;
+                    continue;
+                }
+                
+                if (inInstructions) {
+                    // Remove leading numbers like "1. " or "- " if present
+                    text = text.replace(/^(\d+\.|-|\*)\s+/, '');
+                    
+                    // Format internal bold **text** -> <strong>text</strong>
+                    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    
+                    const li = document.createElement('li');
+                    li.className = 'interactive-item';
+                    li.innerHTML = text;
+                    li.onclick = function() {
+                        this.classList.toggle('strike');
+                    };
+                    instructionsList.appendChild(li);
+                    stepCount++;
+                }
+            }
+            
+            if (stepCount === 0) {
+                // Fallback if parsing failed
+                instructionsList.innerHTML = `<li>Follow standard preparation steps for this recipe. Keep an eye on the cooking temperature!</li>`;
+            }
+            
+        } catch(e) {
+            console.error("Error parsing recipe text", e);
+        }
+
+        // Toggle ingredient strike
+        function toggleStrike(checkbox) {
+            const span = checkbox.nextElementSibling;
+            if (checkbox.checked) {
+                span.classList.add('strike');
+                span.style.color = 'var(--cook-text-muted)';
+            } else {
+                span.classList.remove('strike');
+                span.style.color = 'var(--cook-text)';
+            }
+        }
+
+        // 2. Wake Lock API implementation
+        let wakeLock = null;
+        const wakeLockBtn = document.getElementById('wakeLockBtn');
+        const wakeLockText = document.getElementById('wakeLockText');
+
+        if ('wakeLock' in navigator) {
+            const requestWakeLock = async () => {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLockBtn.classList.add('active');
+                    wakeLockText.textContent = 'Screen On';
+                    
+                    wakeLock.addEventListener('release', () => {
+                        wakeLockBtn.classList.remove('active');
+                        wakeLockText.textContent = 'Keep Screen On';
+                    });
+                } catch (err) {
+                    console.error(`${err.name}, ${err.message}`);
+                }
+            };
+
+            const releaseWakeLock = async () => {
+                if (wakeLock !== null) {
+                    wakeLock.release()
+                    .then(() => {
+                        wakeLock = null;
+                    });
+                }
+            };
+
+            wakeLockBtn.addEventListener('click', () => {
+                if (wakeLock === null) {
+                    requestWakeLock();
+                } else {
+                    releaseWakeLock();
+                }
+            });
+
+            // Re-acquire wake lock when page becomes visible
+            document.addEventListener('visibilitychange', async () => {
+                if (wakeLock !== null && document.visibilityState === 'visible') {
+                    requestWakeLock();
+                }
+            });
+            
+            // Auto request on load
+            requestWakeLock();
+        } else {
+            wakeLockBtn.style.display = 'none'; // Hide if not supported
+        }
+    </script>
+    <!-- Minimal Footer -->
+    <footer class="footer-minimal" style="background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.1); padding: var(--space-8) 0; margin-top: var(--space-20); text-align: center;">
+        <div class="container">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: var(--space-2);">
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: white; opacity: 0.9; margin-bottom: 0.25rem;">
+                    <i data-lucide="salad" class="w-5 h-5 text-primary"></i>
+                    <span style="font-weight: 800; font-size: 1rem; letter-spacing: -0.01em;">HealthRecipe<span style="color: var(--primary-400);">AI</span></span>
+                </div>
+                <p style="color: var(--gray-400); font-size: 0.75rem; font-weight: 500; max-width: 600px; line-height: 1.6;">
+                    &copy; 2024 HealthRecipeAI. All rights reserved.
+                    <span style="display: block; margin-top: 0.25rem; color: var(--gray-500); font-weight: 400;">Not a substitute for professional medical advice.</span>
+                </p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

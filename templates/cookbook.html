@@ -20,18 +20,33 @@
         <header class="cookbook-header">
             <div class="container">
                 <div class="header-left">
-                    <a href="{{ url_for('index') }}" class="back-btn"><i data-lucide="arrow-left"
-                            class="inline-block w-4 h-4 mr-1"></i> Back to App</a>
-                    <div class="header-title">
-                        <h1><i data-lucide="book" class="inline-block w-8 h-8 mr-2 text-primary"></i> My Cookbook</h1>
-                        <p>Your curated collection of health-safe recipes</p>
-                    </div>
+                    <a href="{{ url_for('index') }}" class="logo-link" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem;">
+                        <i data-lucide="salad" class="w-8 h-8 text-primary"></i>
+                        <div class="header-title">
+                            <h1 style="font-size: 1.25rem; font-weight: 800; margin: 0; line-height: 1;">HealthRecipeAI</h1>
+                            <p style="font-size: 0.75rem; margin: 0; opacity: 0.8;">Eat smart. Cook safe.</p>
+                        </div>
+                    </a>
                 </div>
                 <div class="header-right">
-                    <a href="{{ url_for('profile') }}" class="profile-link">
-                        <i data-lucide="user" class="w-5 h-5"></i>
+                    <a href="{{ url_for('community_board') }}" class="btn-glass">
+                        <i data-lucide="globe" class="w-4 h-4 mr-2"></i> Community
+                    </a>
+                    <a href="{{ url_for('pantry') }}" class="btn-glass">
+                        <i data-lucide="layout-grid" class="w-4 h-4 mr-2"></i> Pantry
+                    </a>
+                    <a href="{{ url_for('planner') }}" class="btn-glass">
+                        <i data-lucide="calendar" class="w-4 h-4 mr-2"></i> Meal Planner
+                    </a>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('profile') }}" class="btn-glass profile-link">
+                        <i data-lucide="user" class="w-4 h-4 mr-2"></i>
                         <span>{{ current_user.username }}</span>
                     </a>
+                    <a href="{{ url_for('logout') }}" class="btn-glass logout-btn" title="Logout">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    </a>
+                    {% endif %}
                 </div>
             </div>
         </header>
@@ -54,6 +69,9 @@
                             <option value="{{ category }}">{{ category }}</option>
                             {% endfor %}
                         </select>
+                        <button class="btn btn-primary ml-2" onclick="openExportModal()" style="display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
+                            <i data-lucide="download" class="w-4 h-4"></i> Export PDF
+                        </button>
                     </div>
                 </div>
 
@@ -114,6 +132,12 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" onclick="closeRecipeModal()">Close</button>
+                    <a id="cookingModeBtn" class="btn btn-secondary" href="#" style="text-decoration: none;">
+                        <i data-lucide="chef-hat" class="w-4 h-4 mr-2"></i> Cooking Mode
+                    </a>
+                    <button class="btn btn-primary" id="modalShareBtn" onclick="toggleShare()">
+                        <i data-lucide="globe" class="w-4 h-4 mr-2"></i> <span id="shareBtnText">Share Publicly</span>
+                    </button>
                     <button class="btn btn-primary" id="modalCategoryBtn">
                         <i data-lucide="tag" class="w-4 h-4 mr-2"></i> Change Category
                     </button>
@@ -148,6 +172,56 @@
                 </div>
             </div>
         </div>
+
+        <!-- Export Modal -->
+        <div id="exportModal" class="modal">
+            <div class="modal-content small-modal">
+                <div class="modal-header">
+                    <h2><i data-lucide="printer" class="inline-block w-5 h-5 mr-2"></i>Export Cookbook</h2>
+                    <button class="close-modal" onclick="closeExportModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ url_for('export_cookbook') }}" method="POST" id="exportForm">
+                        <p class="input-label" style="margin-bottom: var(--space-2);">Cookbook Title (Optional):</p>
+                        <input type="text" name="title" placeholder="e.g. My Healthy Dinners" class="custom-input" style="width: 100%; margin-bottom: var(--space-4);">
+                        
+                        <p class="input-label" style="margin-bottom: var(--space-2);">Category to Export:</p>
+                        <select name="category" class="filter-select" style="width: 100%; margin-bottom: var(--space-4);" id="exportCategorySelect">
+                            <option value="all">All Categories</option>
+                            {% for category in categories %}
+                            <option value="{{ category }}">{{ category }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeExportModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="submitExportForm()">Generate PDF</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty Warning Modal -->
+        <div id="emptyWarningModal" class="modal">
+            <div class="modal-content small-modal" style="text-align: center; padding: var(--space-10); max-width: 450px;">
+                <div style="background: rgba(245, 158, 11, 0.1); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-6);">
+                    <i data-lucide="alert-triangle" class="w-10 h-10 text-warning"></i>
+                </div>
+                <h2 style="margin-bottom: var(--space-4); font-weight: 800; color: var(--gray-800);">Cookbook is Empty</h2>
+                <p style="color: var(--gray-600); margin-bottom: var(--space-8); line-height: 1.6;">
+                    You need to save some recipes to your cookbook before you can export them. Start by checking and starring your favorite healthy recipes!
+                </p>
+                <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary" style="text-decoration: none; width: 100%;">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Go to Recipe Checker
+                    </a>
+                    <button class="btn btn-secondary" onclick="closeEmptyWarningModal()" style="width: 100%;">
+                        Stay Here
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <footer class="cookbook-footer">
             <p><i data-lucide="heart" class="inline-block w-4 h-4 text-red-500"></i> Built for your healthy lifestyle</p>
         </footer>
@@ -227,6 +301,21 @@
             
             document.getElementById('modalTitle').innerText = title;
             document.getElementById('modalBody').innerHTML = formatRecipe(content);
+            document.getElementById('cookingModeBtn').href = `/cook/${entryId}`;
+            
+            // Check if it's already public
+            const isPublic = card.dataset.public === 'true';
+            const shareBtn = document.getElementById('modalShareBtn');
+            const shareBtnText = document.getElementById('shareBtnText');
+            if (isPublic) {
+                shareBtn.classList.remove('btn-primary');
+                shareBtn.classList.add('btn-secondary');
+                shareBtnText.innerText = 'Shared (Make Private)';
+            } else {
+                shareBtn.classList.remove('btn-secondary');
+                shareBtn.classList.add('btn-primary');
+                shareBtnText.innerText = 'Share Publicly';
+            }
             
             modal.style.display = 'block';
             document.body.style.overflow = 'hidden';
@@ -240,6 +329,49 @@
                 document.body.style.overflow = 'auto';
             }
             currentEntryId = null;
+        }
+
+        // Share Logic
+        async function toggleShare() {
+            if (!currentEntryId) return;
+            
+            const shareBtn = document.getElementById('modalShareBtn');
+            const shareBtnText = document.getElementById('shareBtnText');
+            // Optimistic UI
+            const isCurrentlyPublic = shareBtnText.innerText.includes('Shared');
+            shareBtnText.innerText = 'Updating...';
+            
+            try {
+                const response = await fetch(`/api/community/share/${currentEntryId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const card = document.querySelector(`.recipe-card button[onclick*="${currentEntryId}"]`).closest('.recipe-card');
+                    card.dataset.public = data.is_public;
+                    
+                    if (data.is_public) {
+                        shareBtn.classList.remove('btn-primary');
+                        shareBtn.classList.add('btn-secondary');
+                        shareBtnText.innerText = 'Shared (Make Private)';
+                        showToast('Recipe is now public!', 'success');
+                    } else {
+                        shareBtn.classList.remove('btn-secondary');
+                        shareBtn.classList.add('btn-primary');
+                        shareBtnText.innerText = 'Share Publicly';
+                        showToast('Recipe is now private.', 'info');
+                    }
+                } else {
+                    showToast('Failed to update share status.', 'warning');
+                    shareBtnText.innerText = isCurrentlyPublic ? 'Shared (Make Private)' : 'Share Publicly';
+                }
+            } catch (error) {
+                console.error('Error sharing:', error);
+                showToast('Failed to update share status.', 'warning');
+                shareBtnText.innerText = isCurrentlyPublic ? 'Shared (Make Private)' : 'Share Publicly';
+            }
         }
 
         // Category Modal Logic
@@ -257,6 +389,40 @@
             if (!modal.style.display || modal.style.display === 'none') {
                 document.body.style.overflow = 'auto';
             }
+        }
+
+        // Export Modal Logic
+        const exportModal = document.getElementById('exportModal');
+        const emptyWarningModal = document.getElementById('emptyWarningModal');
+
+        function openExportModal() {
+            // Check if cookbook is empty (re-query for accuracy)
+            const currentCards = document.querySelectorAll('.recipe-card');
+            if (currentCards.length === 0) {
+                emptyWarningModal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+                lucide.createIcons();
+                return;
+            }
+
+            exportModal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            // Sync category with current filter
+            document.getElementById('exportCategorySelect').value = document.getElementById('categoryFilter').value;
+        }
+
+        function closeExportModal() {
+            exportModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function closeEmptyWarningModal() {
+            emptyWarningModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        function submitExportForm() {
+            document.getElementById('exportForm').submit();
+            closeExportModal();
         }
 
         // Handle Suggestion Chips
@@ -499,84 +665,7 @@
         }
 
         /* Header — matches app-header, results-header gradient pattern */
-        .cookbook-header {
-            background: var(--gradient-primary);
-            padding: var(--space-6) 0;
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .cookbook-header .container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: var(--space-4);
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: var(--space-4);
-        }
-
-        .header-title h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: white;
-        }
-
-        .header-title p {
-            opacity: 0.9;
-            font-size: 0.9375rem;
-            color: white;
-        }
-
-        /* Back button — matches site back-btn (semi-transparent white pill on gradient) */
-        .cookbook-page .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--space-2);
-            padding: var(--space-2) var(--space-4);
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: var(--radius-lg);
-            color: white;
-            font-weight: 500;
-            font-size: 0.9375rem;
-            transition: var(--transition-base);
-            border: none;
-            text-transform: none;
-            letter-spacing: normal;
-            margin-bottom: 0;
-        }
-
-        .cookbook-page .back-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* Profile link — matches header-btn style from the rest of site */
-        .profile-link {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--space-2);
-            padding: var(--space-2) var(--space-4);
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: var(--radius-lg);
-            color: white;
-            font-weight: 500;
-            font-size: 0.9375rem;
-            text-decoration: none;
-            transition: var(--transition-base);
-        }
-
-        .profile-link:hover {
-            background: rgba(255, 255, 255, 0.3);
-            color: white;
-        }
+        /* Shared header styles now in style.css */
 
         /* Main Content */
         .cookbook-page .main-content {
@@ -1291,6 +1380,21 @@
             background: var(--secondary-500);
         }
     </style>
+    <!-- Minimal Footer -->
+    <footer class="footer-minimal" style="background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.1); padding: var(--space-8) 0; margin-top: var(--space-20); text-align: center;">
+        <div class="container">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: var(--space-2);">
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: white; opacity: 0.9; margin-bottom: 0.25rem;">
+                    <i data-lucide="salad" class="w-5 h-5 text-primary"></i>
+                    <span style="font-weight: 800; font-size: 1rem; letter-spacing: -0.01em;">HealthRecipe<span style="color: var(--primary-400);">AI</span></span>
+                </div>
+                <p style="color: var(--gray-400); font-size: 0.75rem; font-weight: 500; max-width: 600px; line-height: 1.6;">
+                    &copy; 2024 HealthRecipeAI. All rights reserved.
+                    <span style="display: block; margin-top: 0.25rem; color: var(--gray-500); font-weight: 400;">Not a substitute for professional medical advice.</span>
+                </p>
+            </div>
+        </div>
+    </footer>
 </body>
 
 </html>

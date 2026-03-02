@@ -11,11 +11,12 @@ import bleach
 import time
 from functools import lru_cache
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 import json
+import re
 from config import Config
 from ml_service import ml_service
 from models import UserManager
@@ -83,10 +84,13 @@ _food_entries = None
 _recipes = None
 _generated_recipes = None
 _user_manager = None
+_meal_plans = None
+_grocery_lists = None
+_pantry_items = None
 
 def get_db():
     """Lazy initialization of MongoDB connection"""
-    global _client, _db, _ingredient_rules, _food_entries, _recipes, _generated_recipes, _user_manager
+    global _client, _db, _ingredient_rules, _food_entries, _recipes, _generated_recipes, _user_manager, _meal_plans, _grocery_lists, _pantry_items
     
     if _db is None:
         try:
@@ -122,6 +126,9 @@ def get_db():
             _food_entries = _db['food_entries']
             _recipes = _db['recipes']
             _generated_recipes = _db['generated_recipes']
+            _meal_plans = _db['meal_plans']
+            _grocery_lists = _db['grocery_lists']
+            _pantry_items = _db['pantry_items']
             
             # Ensure indexes for fast lookups
             try:
@@ -157,6 +164,9 @@ def get_db():
             _food_entries = DummyCollection()
             _recipes = DummyCollection()
             _generated_recipes = DummyCollection()
+            _meal_plans = DummyCollection()
+            _grocery_lists = DummyCollection()
+            _pantry_items = DummyCollection()
             _user_manager = UserManager(None)
     
     return _db
@@ -182,6 +192,18 @@ def get_generated_recipes():
 def get_user_manager():
     get_db()
     return _user_manager
+
+def get_meal_plans():
+    get_db()
+    return _meal_plans
+
+def get_grocery_lists():
+    get_db()
+    return _grocery_lists
+
+def get_pantry_items():
+    get_db()
+    return _pantry_items
 
 # Ingredient rules cache for faster lookups
 _ingredient_rules_cache = None
@@ -737,7 +759,161 @@ def generate_pdf_report(user_id):
         import traceback
         traceback.print_exc()
         return None
-    
+        
+def generate_cookbook_pdf(user_id, category=None, custom_title=None):
+    """Generate a Cookbook PDF from user's favorite recipes"""
+    print(f"[DEBUG] Generating Cookbook PDF... user: {user_id}, category: {category}")
+    try:
+        user = get_user_manager().get_user_by_id(user_id)
+        
+        query = {"patient_id": user_id, "is_favorite": True}
+        if category and category != 'all':
+            query["category"] = category
+            
+        entries = list(get_food_entries().find(query).sort("timestamp", -1))
+        
+        # Deduplicate exactly like we do in the cookbook frontend
+        seen_names = set()
+        unique_entries = []
+        for entry in entries:
+            name = (entry.get('recipe_name') or '').strip().lower()
+            if not name:
+                ings = entry.get('input_ingredients') or entry.get('safe') or []
+                name = ','.join(sorted(i.strip().lower() for i in ings if i))
+            if name and name in seen_names: continue
+            if name: seen_names.add(name)
+            unique_entries.append(entry)
+            
+        entries = unique_entries
+        
+        if not entries:
+            return None
+            
+        filename = os.path.join(_reports_dir(), f"cookbook_{user_id}.pdf")
+        doc = SimpleDocTemplate(filename, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        # Professional Styles
+        h1_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor("#008080"), # Teal
+            alignment=1, # Center
+            spaceAfter=20,
+            fontName='Helvetica-Bold'
+        )
+        
+        info_style = ParagraphStyle(
+            'InfoStyle',
+            parent=styles['Normal'],
+            fontSize=10,
+            textColor=colors.gray,
+            alignment=1,
+            spaceAfter=30
+        )
+        
+        toc_heading_style = ParagraphStyle(
+            'TOCHeading',
+            parent=styles['Heading2'],
+            fontSize=16,
+            textColor=colors.HexColor("#333333"),
+            spaceBefore=20,
+            spaceAfter=15,
+            borderPadding=10,
+            borderWidth=0,
+            fontName='Helvetica-Bold'
+        )
+
+        h2 = styles['Heading2']
+        h2.textColor = colors.HexColor("#005a5a") # Darker Teal
+        normal = styles['Normal']
+        
+        # Format username - add spaces between joined names (e.g. SandipYedage -> Sandip Yedage)
+        formatted_user = re.sub(r'([a-z])([A-Z])', r'\1 \2', user.username)
+        main_title = custom_title if custom_title and custom_title.strip() else f"{formatted_user}'s Healthy Cookbook"
+        
+        # Header - Compact
+        elements.append(Paragraph(main_title, h1_style))
+        elements.append(Paragraph(f"Generated on {datetime.now().strftime('%B %d, %Y')}", info_style))
+        
+        if category and category != 'all':
+            elements.append(Paragraph(f"Category: <b>{category}</b>", info_style))
+            
+        elements.append(Spacer(1, 10))
+        
+        # Table of Contents
+        elements.append(Paragraph("Table of Contents", toc_heading_style))
+        
+        # Create a table for TOC to look cleaner
+        toc_data = []
+        for i, entry in enumerate(entries, 1):
+            name = entry.get('recipe_name') or 'Custom Recipe'
+            toc_data.append([f"{i}.", name])
+            
+        toc_table = Table(toc_data, colWidths=[30, 450])
+        toc_table.setStyle(TableStyle([
+            ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+            ('FONTSIZE', (0,0), (-1,-1), 10),
+            ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor("#444444")),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+            ('ALIGN', (0,0), (0,-1), 'RIGHT'),
+        ]))
+        elements.append(toc_table)
+        elements.append(PageBreak())
+        
+        for entry in entries:
+            name = entry.get('recipe_name') or 'Custom Recipe'
+            elements.append(Paragraph(name, h2))
+            elements.append(Spacer(1, 12))
+            
+            # Safe Ingredients
+            elements.append(Paragraph("<b>Ingredients:</b>", normal))
+            safe_ings = entry.get('safe', [])
+            if not safe_ings:
+                safe_ings = entry.get('input_ingredients', [])
+            for ing in safe_ings:
+                elements.append(Paragraph(f"• {ing}", normal))
+            elements.append(Spacer(1, 12))
+            
+            # Recipe Content formatting
+            recipe_text = entry.get('recipe', '')
+            # Instructions
+            if recipe_text:
+                elements.append(Paragraph("<b>Instructions:</b>", normal))
+                elements.append(Spacer(1, 6))
+                for line in recipe_text.split('\n'):
+                    line = line.strip()
+                    if not line:
+                        elements.append(Spacer(1, 4))
+                        continue
+                        
+                    # Basic bold parsing for reportlab
+                    text_line = line
+                    if '**' in text_line:
+                        parts = text_line.split('**')
+                        for i in range(1, len(parts), 2):
+                            parts[i] = f"<b>{parts[i]}</b>"
+                        text_line = "".join(parts)
+                        
+                    elements.append(Paragraph(text_line, normal))
+            
+            # Divider between recipes instead of full page break
+            elements.append(Spacer(1, 20))
+            elements.append(Table([[""]], colWidths=[520], style=TableStyle([
+                ('LINEABOVE', (0,0), (-1,-1), 0.5, colors.lightgrey),
+            ])))
+            elements.append(Spacer(1, 20))
+            
+        doc.build(elements)
+        print(f"Cookbook PDF generated for user {user_id}: {filename}")
+        return filename
+    except Exception as e:
+        print(f"Error generating cookbook: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
     
 @app.route('/')
 def landing_page():
@@ -874,6 +1050,7 @@ def check_ingredients_route():
     ingredients_text = request.form.get('ingredients', '').strip()
     recipe_name = request.form.get('recipe_name', '').strip()
     condition = request.form.get('condition', '').strip()
+    optimize_budget = request.form.get('optimize_budget') == 'on'
     
     # Validate ingredients input
     if not ingredients_text:
@@ -997,6 +1174,11 @@ def check_ingredients_route():
         except Exception:
             pass
     
+    # Calculate cost if requested
+    recipe_cost = None
+    if optimize_budget:
+        recipe_cost = ml_service.estimate_recipe_cost(modified_ingredients)
+        
     return render_template('result.html', 
                          harmful=harmful, 
                          safe=modified_ingredients, 
@@ -1011,6 +1193,7 @@ def check_ingredients_route():
                          profile_warnings=profile_warnings,
                          is_already_saved=is_already_saved,
                          personalized_notes=personalized_notes,
+                         recipe_cost=recipe_cost,
                          moment=datetime.now().strftime('%B %d, %Y at %I:%M %p'))
 
 @app.route('/generate_report/<patient_id>')
@@ -1763,6 +1946,420 @@ def update_category(entry_id):
         return jsonify({"success": True, "category": category})
     except Exception as e:
         print(f"Error updating category: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/cook/<entry_id>')
+@login_required
+def cooking_mode(entry_id):
+    """Immersive cooking mode for a specific recipe"""
+    try:
+        entry = get_food_entries().find_one({
+            "_id": ObjectId(entry_id),
+            "patient_id": current_user.user_id
+        })
+        if not entry:
+            flash("Recipe not found.", "error")
+            return redirect(url_for('cookbook'))
+            
+        # Parse recipe text into ingredients and structured steps
+        recipe_text = entry.get('recipe', '')
+        
+        return render_template('cook.html', recipe=entry)
+    except Exception as e:
+        print(f"Error loading cooking mode: {e}")
+        flash("Error loading cooking mode.", "error")
+        return redirect(url_for('cookbook'))
+
+@app.route('/api/cookbook/export', methods=['GET', 'POST'])
+@login_required
+def export_cookbook():
+    """Export Cookbook to PDF"""
+    try:
+        category = 'all'
+        custom_title = None
+        
+        if request.method == 'POST':
+            # Try JSON first, then fall back to form data
+            data = request.get_json(force=True, silent=True)
+            if data:
+                category = data.get('category', 'all')
+                custom_title = data.get('title')
+            else:
+                # Regular HTML form submission (application/x-www-form-urlencoded)
+                category = request.form.get('category', 'all')
+                custom_title = request.form.get('title')
+        else:
+            category = request.args.get('category', 'all')
+            custom_title = request.args.get('title')
+        
+        print(f"[DEBUG] Export cookbook: category={category}, title={custom_title}")
+        filename = generate_cookbook_pdf(current_user.user_id, category, custom_title)
+        
+        if filename and os.path.exists(filename):
+            safe_name = current_user.username.strip().lower().replace(' ', '_')
+            cat_suffix = f"_{category.lower()}" if category != 'all' else ""
+            download_name = f"{safe_name}_cookbook{cat_suffix}.pdf"
+            return send_file(filename, as_attachment=True, download_name=download_name)
+        else:
+            print(f"[DEBUG] Export cookbook failed: no entries found or PDF generation failed for user {current_user.user_id}, category={category}")
+            flash("Could not generate cookbook PDF. Make sure you have saved (starred) recipes in your cookbook.", "error")
+            return redirect(url_for('cookbook'))
+    except Exception as e:
+        print(f"Export cookbook error: {e}")
+        import traceback
+        traceback.print_exc()
+        flash(f"Error generating PDF: {str(e)}", "error")
+        return redirect(url_for('cookbook'))
+
+@app.route('/community')
+def community_board():
+    """Community page showing public recipes"""
+    filter_condition = request.args.get('condition', 'all')
+    
+    query = {"is_public": True}
+    if filter_condition != 'all':
+        query["condition"] = filter_condition
+        
+    # Get public recipes, sort by likes (descending) and then timestamp
+    # using projection to avoid pulling the whole user list if not needed, but we do need the count
+    public_entries = list(get_food_entries().find(query).sort([("likes_count", -1), ("timestamp", -1)]).limit(50))
+    
+    # Add username to each entry
+    for entry in public_entries:
+        try:
+            author = get_user_manager().get_user_by_id(entry.get('patient_id'))
+            entry['author_name'] = author.username if author else 'Anonymous'
+            # Check if current user liked it
+            entry['liked_by_me'] = False
+            if current_user.is_authenticated:
+                likes = entry.get('likes', [])
+                if current_user.user_id in likes:
+                    entry['liked_by_me'] = True
+        except Exception:
+            entry['author_name'] = 'Anonymous'
+            entry['liked_by_me'] = False
+            
+    return render_template('community.html', entries=public_entries, current_filter=filter_condition)
+
+@app.route('/api/community/share/<entry_id>', methods=['POST'])
+@login_required
+def toggle_share(entry_id):
+    """Toggle public sharing of a recipe"""
+    try:
+        entry = get_food_entries().find_one({
+            "_id": ObjectId(entry_id),
+            "patient_id": current_user.user_id
+        })
+        
+        if not entry:
+            return jsonify({"error": "Entry not found"}), 404
+            
+        new_status = not entry.get('is_public', False)
+        
+        get_food_entries().update_one(
+            {"_id": ObjectId(entry_id)},
+            {"$set": {"is_public": new_status}}
+        )
+        
+        return jsonify({"success": True, "is_public": new_status})
+    except Exception as e:
+        print(f"Error toggling share: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/community/like/<entry_id>', methods=['POST'])
+@login_required
+def toggle_like(entry_id):
+    """Like or unlike a public recipe"""
+    try:
+        entry = get_food_entries().find_one({
+            "_id": ObjectId(entry_id),
+            "is_public": True
+        })
+        
+        if not entry:
+            return jsonify({"error": "Public entry not found"}), 404
+            
+        likes = entry.get('likes', [])
+        
+        if current_user.user_id in likes:
+            # Unlike
+            likes.remove(current_user.user_id)
+            liked = False
+        else:
+            # Like
+            likes.append(current_user.user_id)
+            liked = True
+            
+        get_food_entries().update_one(
+            {"_id": ObjectId(entry_id)},
+            {"$set": {
+                "likes": likes,
+                "likes_count": len(likes)
+            }}
+        )
+        
+        return jsonify({"success": True, "liked": liked, "likes_count": len(likes)})
+    except Exception as e:
+        print(f"Error toggling like: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/planner')
+@login_required
+def planner():
+    """Weekly Meal Planner page"""
+    try:
+        # Get all favorited entries for the user to display in sidebar
+        favorite_entries = list(get_food_entries().find({
+            "patient_id": current_user.user_id,
+            "is_favorite": True
+        }).sort("timestamp", -1))
+        
+        # Deduplicate
+        seen_names = set()
+        unique_entries = []
+        for entry in favorite_entries:
+            name = (entry.get('recipe_name') or '').strip().lower()
+            if not name:
+                ings = entry.get('input_ingredients') or entry.get('safe') or []
+                name = ','.join(sorted(i.strip().lower() for i in ings if i))
+            if name and name in seen_names: continue
+            if name: seen_names.add(name)
+            unique_entries.append(entry)
+            
+        # Get user's meal plans
+        plans = list(get_meal_plans().find({"user_id": current_user.user_id}))
+        # Convert ObjectId and datetime to string for JSON serialization
+        for p in plans:
+            p['_id'] = str(p['_id'])
+            p['entry_id'] = str(p['entry_id']) if p.get('entry_id') else None
+            if 'added_at' in p:
+                p['added_at'] = p['added_at'].isoformat() if hasattr(p['added_at'], 'isoformat') else str(p['added_at'])
+    except Exception as e:
+        print(f"Error getting planner data: {e}")
+        unique_entries = []
+        plans = []
+        
+    return render_template('planner.html', entries=unique_entries, plans=json.dumps(plans))
+
+@app.route('/api/mealplan/add', methods=['POST'])
+@login_required
+def add_meal_plan():
+    """Add a recipe to the meal plan"""
+    try:
+        data = request.get_json()
+        date = data.get('date') # Format: YYYY-MM-DD
+        meal_type = data.get('meal_type') # breakfast, lunch, dinner, snack
+        entry_id = data.get('entry_id')
+        recipe_name = data.get('recipe_name', 'Unknown Recipe')
+        
+        if not all([date, meal_type, entry_id]):
+            return jsonify({"error": "Missing required fields"}), 400
+            
+        plan_doc = {
+            "user_id": current_user.user_id,
+            "date": date,
+            "meal_type": meal_type,
+            "entry_id": ObjectId(entry_id),
+            "recipe_name": recipe_name,
+            "added_at": datetime.now()
+        }
+        
+        result = get_meal_plans().insert_one(plan_doc)
+        return jsonify({"success": True, "id": str(result.inserted_id), "plan": {
+            "_id": str(result.inserted_id),
+            "date": date,
+            "meal_type": meal_type,
+            "entry_id": str(entry_id),
+            "recipe_name": recipe_name
+        }})
+    except Exception as e:
+        print(f"Error adding meal plan: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/mealplan/remove/<plan_id>', methods=['POST'])
+@login_required
+def remove_meal_plan(plan_id):
+    """Remove a recipe from the meal plan"""
+    try:
+        result = get_meal_plans().delete_one({
+            "_id": ObjectId(plan_id),
+            "user_id": current_user.user_id
+        })
+        if result.deleted_count > 0:
+            return jsonify({"success": True})
+        return jsonify({"error": "Plan not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/grocery/generate', methods=['POST'])
+@login_required
+def generate_grocery_list():
+    """Generate grocery list from meal plans for a date range"""
+    try:
+        data = request.get_json()
+        start_date = data.get('start_date') # YYYY-MM-DD
+        end_date = data.get('end_date') # YYYY-MM-DD
+        
+        # Query meal plans in range
+        plans = list(get_meal_plans().find({
+            "user_id": current_user.user_id,
+            "date": {"$gte": start_date, "$lte": end_date}
+        }))
+        
+        # Get all entry_ids
+        entry_ids = [plan['entry_id'] for plan in plans if 'entry_id' in plan]
+        
+        # Get corresponding food entries
+        entries = list(get_food_entries().find({"_id": {"$in": entry_ids}}))
+        
+        # Aggregate ingredients
+        all_ingredients = []
+        for entry in entries:
+            # Prefer safe ingredients if available, else input ingredients
+            ings = entry.get('safe') or entry.get('input_ingredients') or []
+            all_ingredients.extend([i.strip().lower() for i in ings if i and i.strip()])
+        
+        # Simple deduplication and counting
+        from collections import Counter
+        ing_counts = Counter(all_ingredients)
+        
+        grocery_items = [{"name": name, "count": count, "checked": False} for name, count in ing_counts.items()]
+        
+        # Save to DB
+        grocery_doc = {
+            "user_id": current_user.user_id,
+            "start_date": start_date,
+            "end_date": end_date,
+            "items": grocery_items,
+            "generated_at": datetime.now()
+        }
+        
+        result = get_grocery_lists().insert_one(grocery_doc)
+        return jsonify({"success": True, "list_id": str(result.inserted_id), "items": grocery_items})
+    except Exception as e:
+        print(f"Error generating grocery list: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/grocery')
+@login_required
+def grocery_list_view():
+    """View the latest generated grocery list"""
+    try:
+        latest_list = get_grocery_lists().find_one(
+            {"user_id": current_user.user_id},
+            sort=[("generated_at", -1)]
+        )
+        items = latest_list.get('items', []) if latest_list else []
+        list_id = str(latest_list['_id']) if latest_list else None
+    except Exception as e:
+        print(f"Error getting grocery list: {e}")
+        items = []
+        list_id = None
+        
+    return render_template('grocery.html', items=items, list_id=list_id)
+
+@app.route('/api/grocery/toggle/<list_id>', methods=['POST'])
+@login_required
+def toggle_grocery_item(list_id):
+    try:
+        data = request.get_json()
+        item_name = data.get('name')
+        checked = data.get('checked', False)
+        
+        get_grocery_lists().update_one(
+            {"_id": ObjectId(list_id), "user_id": current_user.user_id, "items.name": item_name},
+            {"$set": {"items.$.checked": checked}}
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/pantry')
+@login_required
+def pantry():
+    """Smart Pantry Management page"""
+    try:
+        # Get user's pantry items
+        pantry_doc = get_pantry_items().find_one({"user_id": current_user.user_id})
+        items = pantry_doc.get('items', []) if pantry_doc else []
+        
+        # Determine recipe suggestions
+        user_pantry = set(i.lower() for i in items)
+        suggestions = []
+        
+        if user_pantry:
+            # Get favorite recipes to see if we can cook them
+            favs = list(get_food_entries().find({
+                "patient_id": current_user.user_id,
+                "is_favorite": True
+            }).sort("timestamp", -1))
+            
+            # Basic overlap scoring
+            for req in favs:
+                recipe_ings = req.get('safe') or req.get('input_ingredients') or []
+                recipe_ings = [r.strip().lower() for r in recipe_ings if r.strip()]
+                if not recipe_ings: continue
+                
+                # Check overlap (naive contains check)
+                matches = 0
+                for ri in recipe_ings:
+                    # if recipe ingredient is in any pantry item or vice versa
+                    if any(ri in pi or pi in ri for pi in user_pantry):
+                        matches += 1
+                
+                match_pct = (matches / len(recipe_ings)) * 100
+                if match_pct > 0:
+                    suggestions.append({
+                        "entry_id": str(req['_id']),
+                        "recipe_name": req.get('recipe_name', 'Custom Recipe'),
+                        "match_pct": round(match_pct),
+                        "total_ingredients": len(recipe_ings),
+                        "matched": matches
+                    })
+                    
+            # Sort suggestions by match percentage DESC
+            suggestions.sort(key=lambda x: x['match_pct'], reverse=True)
+            # Take top 10
+            suggestions = suggestions[:10]
+            
+    except Exception as e:
+        print(f"Error getting pantry data: {e}")
+        items = []
+        suggestions = []
+        
+    return render_template('pantry.html', items=items, suggestions=suggestions)
+
+@app.route('/api/pantry/add', methods=['POST'])
+@login_required
+def add_pantry_item():
+    try:
+        data = request.get_json()
+        item = data.get('item', '').strip()
+        if not item:
+            return jsonify({"error": "Item is required"}), 400
+            
+        get_pantry_items().update_one(
+            {"user_id": current_user.user_id},
+            {"$addToSet": {"items": item}},
+            upsert=True
+        )
+        return jsonify({"success": True, "item": item})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/pantry/remove', methods=['POST'])
+@login_required
+def remove_pantry_item():
+    try:
+        data = request.get_json()
+        item = data.get('item', '').strip()
+        
+        get_pantry_items().update_one(
+            {"user_id": current_user.user_id},
+            {"$pull": {"items": item}}
+        )
+        return jsonify({"success": True})
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':

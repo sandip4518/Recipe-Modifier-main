@@ -55,21 +55,133 @@
             width: 20px;
             height: 20px;
         }
+
+        /* ---- Two-Column Register Layout ---- */
+        .register-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 2rem;
+            align-items: start;
+            width: 100%;
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem;
+        }
+
+        .register-layout .auth-card {
+            width: 100%;
+        }
+
+        /* Right sidebar info cards */
+        .register-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            position: sticky;
+            top: 2rem;
+        }
+
+        .register-sidebar .info-card {
+            background: white;
+            border-radius: var(--radius-2xl);
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            border: 1px solid var(--gray-100);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .register-sidebar .info-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        }
+
+        .register-sidebar .info-card.warning {
+            border-left: 4px solid var(--warning);
+            background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+        }
+
+        .register-sidebar .info-card.info {
+            border-left: 4px solid var(--info);
+            background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+        }
+
+        .register-sidebar .info-card.tips {
+            border-left: 4px solid var(--primary-500);
+            background: linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%);
+        }
+
+        .register-sidebar .info-card h4 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: var(--gray-800);
+        }
+
+        .register-sidebar .info-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .register-sidebar .info-card ul li {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0;
+            font-size: 0.8125rem;
+            color: var(--gray-600);
+            line-height: 1.4;
+        }
+
+        .register-sidebar .info-card ul li i {
+            flex-shrink: 0;
+        }
+
+        /* Mobile: collapse to single column */
+        @media (max-width: 820px) {
+            .register-layout {
+                grid-template-columns: 1fr;
+                max-width: 560px;
+                padding: 2rem 1rem;
+            }
+
+            .register-sidebar {
+                position: static;
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .register-sidebar .info-card {
+                flex: 1;
+                min-width: 250px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .register-sidebar {
+                flex-direction: column;
+            }
+
+            .register-sidebar .info-card {
+                min-width: 0;
+            }
+
+            .register-layout {
+                padding: 1rem;
+            }
+        }
     </style>
 </head>
 
 <body>
     <div class="auth-page">
-        <div class="auth-container">
-            <!-- Logo -->
-            <div class="logo-header">
-                <a href="{{ url_for('landing_page') }}">
-                    <span class="logo-icon"><i data-lucide="salad" class="w-8 h-8"></i></span>
-                    <span class="logo-text">HealthRecipe<span class="logo-accent">AI</span></span>
-                </a>
-            </div>
 
-            <!-- Register Card -->
+        <div class="register-layout">
+
+            <!-- Left Column: Register Card -->
             <div class="auth-card">
                 <div class="auth-header">
                     <h1><i data-lucide="sparkles" class="inline-block mr-2" style="width: 1em; height: 1em;"></i> Create
@@ -211,33 +323,44 @@
                 </div>
             </div>
 
-            <!-- Info Cards -->
-            <div class="info-card warning">
-                <h4><i data-lucide="shield-check" class="inline-block w-5 h-5 mr-2 text-warning"></i> Password
-                    Requirements</h4>
-                <ul>
-                    <li><i data-lucide="check" class="inline-block w-3 h-3 mr-1"></i> At least 6 characters long</li>
-                    <li><i data-lucide="check" class="inline-block w-3 h-3 mr-1"></i> Must contain at least one letter
-                    </li>
-                    <li><i data-lucide="check" class="inline-block w-3 h-3 mr-1"></i> Must contain at least one number
-                    </li>
-                    <li><i data-lucide="check" class="inline-block w-3 h-3 mr-1"></i> Username: letters, numbers,
-                        underscores only</li>
-                </ul>
-            </div>
+            <!-- Right Column: Sidebar Info Cards -->
+            <div class="register-sidebar">
 
-            <div class="info-card info">
-                <h4><i data-lucide="lock" class="inline-block w-5 h-5 mr-2 text-info"></i> Privacy & Security</h4>
-                <ul>
-                    <li><i data-lucide="lock" class="inline-block w-3 h-3 mr-1"></i> Your password is securely hashed
-                    </li>
-                    <li><i data-lucide="hard-drive" class="inline-block w-3 h-3 mr-1"></i> Your data is stored securely
-                    </li>
-                    <li><i data-lucide="eye-off" class="inline-block w-3 h-3 mr-1"></i> We never share your personal
-                        information</li>
-                    <li><i data-lucide="heart-pulse" class="inline-block w-3 h-3 mr-1"></i> Your health data is kept
-                        private</li>
-                </ul>
+                <!-- Password Requirements -->
+                <div class="info-card warning">
+                    <h4><i data-lucide="shield-check" class="inline-block w-5 h-5" style="color: var(--warning);"></i> Password
+                        Requirements</h4>
+                    <ul>
+                        <li><i data-lucide="check" class="inline-block w-3 h-3" style="color: var(--warning);"></i> At least 6 characters long</li>
+                        <li><i data-lucide="check" class="inline-block w-3 h-3" style="color: var(--warning);"></i> Must contain at least one letter</li>
+                        <li><i data-lucide="check" class="inline-block w-3 h-3" style="color: var(--warning);"></i> Must contain at least one number</li>
+                        <li><i data-lucide="check" class="inline-block w-3 h-3" style="color: var(--warning);"></i> Username: letters, numbers,
+                            underscores only</li>
+                    </ul>
+                </div>
+
+                <!-- Privacy & Security -->
+                <div class="info-card info">
+                    <h4><i data-lucide="lock" class="inline-block w-5 h-5" style="color: var(--info);"></i> Privacy & Security</h4>
+                    <ul>
+                        <li><i data-lucide="lock" class="inline-block w-3 h-3" style="color: var(--info);"></i> Your password is securely hashed</li>
+                        <li><i data-lucide="hard-drive" class="inline-block w-3 h-3" style="color: var(--info);"></i> Your data is stored securely</li>
+                        <li><i data-lucide="eye-off" class="inline-block w-3 h-3" style="color: var(--info);"></i> We never share your personal
+                            information</li>
+                        <li><i data-lucide="heart-pulse" class="inline-block w-3 h-3" style="color: var(--info);"></i> Your health data is kept
+                            private</li>
+                    </ul>
+                </div>
+
+                <!-- Quick Tips -->
+                <div class="info-card tips">
+                    <h4><i data-lucide="lightbulb" class="inline-block w-5 h-5" style="color: var(--primary-500);"></i> Quick Tips</h4>
+                    <ul>
+                        <li><i data-lucide="sparkles" class="inline-block w-3 h-3" style="color: var(--primary-500);"></i> Set your medical condition for tailored recipes</li>
+                        <li><i data-lucide="utensils" class="inline-block w-3 h-3" style="color: var(--primary-500);"></i> Update your profile anytime from settings</li>
+                        <li><i data-lucide="book-open" class="inline-block w-3 h-3" style="color: var(--primary-500);"></i> Save your favorite recipes to your cookbook</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -263,17 +386,29 @@
             }
         }
 
-        // Add animation on load
+        // Add staggered animation on load
         document.addEventListener('DOMContentLoaded', function () {
-            const cards = document.querySelectorAll('.auth-card, .info-card');
-            cards.forEach((card, index) => {
+            const mainCard = document.querySelector('.auth-card');
+            const sidebarCards = document.querySelectorAll('.register-sidebar .info-card');
+
+            // Animate main card
+            mainCard.style.opacity = '0';
+            mainCard.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                mainCard.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+                mainCard.style.opacity = '1';
+                mainCard.style.transform = 'translateY(0)';
+            }, 100);
+
+            // Animate sidebar cards with stagger
+            sidebarCards.forEach((card, index) => {
                 card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
+                card.style.transform = 'translateX(30px)';
                 setTimeout(() => {
-                    card.style.transition = 'all 0.5s ease';
+                    card.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
                     card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                }, index * 100);
+                    card.style.transform = 'translateX(0)';
+                }, 300 + (index * 150));
             });
         });
     </script>
