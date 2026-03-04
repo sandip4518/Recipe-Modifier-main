@@ -102,7 +102,7 @@ temp/
 .ipynb_checkpoints
 
 # pyenv
-.python-version
+# .python-version  (needed by Render for Python version detection)
 
 # Celery
 celerybeat-schedule
