@@ -42,7 +42,7 @@ htmlcov/
 .hypothesis/
 
 # Test files (if you want to exclude them)
-test_*.py
+!test_*.py
 *_test.py
 
 # IDE & Editors
