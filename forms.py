@@ -2,6 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SelectField, RadioField, SubmitField, BooleanField, IntegerField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, NumberRange, Optional
 import re
+from difflib import get_close_matches
 
 class RegistrationForm(FlaskForm):
     """User registration form"""
@@ -43,6 +44,25 @@ class RegistrationForm(FlaskForm):
                                   ])
     
     submit = SubmitField('Register')
+    
+    def validate_email(self, email):
+        """Check for common email domain typos"""
+        email_data = email.data.lower()
+        if '@' not in email_data:
+            return
+            
+        domain = email_data.split('@')[-1]
+        common_domains = [
+            'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 
+            'icloud.com', 'aol.com', 'live.com', 'msn.com', 
+            'protonmail.com', 'me.com', 'ymail.com'
+        ]
+        
+        # If domain is not exactly in common_domains, check for close matches
+        if domain not in common_domains:
+            matches = get_close_matches(domain, common_domains, n=1, cutoff=0.8)
+            if matches:
+                 raise ValidationError(f"Possible typo in email domain. Did you mean '@{matches[0]}'? If yes, please correct it.")
     
     def validate_username(self, username):
         """Custom validation for username"""
@@ -109,6 +129,25 @@ class ProfileUpdateForm(FlaskForm):
                                   ])
     
     submit = SubmitField('Update Profile')
+
+    def validate_email(self, email):
+        """Check for common email domain typos"""
+        email_data = email.data.lower()
+        if '@' not in email_data:
+            return
+            
+        domain = email_data.split('@')[-1]
+        common_domains = [
+            'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 
+            'icloud.com', 'aol.com', 'live.com', 'msn.com', 
+            'protonmail.com', 'me.com', 'ymail.com'
+        ]
+        
+        # If domain is not exactly in common_domains, check for close matches
+        if domain not in common_domains:
+            matches = get_close_matches(domain, common_domains, n=1, cutoff=0.8)
+            if matches:
+                 raise ValidationError(f"Possible typo in email domain. Did you mean '@{matches[0]}'? If yes, please correct it.")
 
 class ChangePasswordForm(FlaskForm):
     """Change password form"""
