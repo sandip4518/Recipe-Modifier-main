@@ -357,8 +357,6 @@ def initialize_database():
             print("Sample recipes added to database")
     except Exception as e:
         print(f"Error adding sample recipes: {e}")
-    except Exception as e:
-        print(f"Error in initialize_database: {e}")
 
 def ensure_core_ingredients():
     """Ensure critical common ingredients exist (for autocomplete and matching)."""
