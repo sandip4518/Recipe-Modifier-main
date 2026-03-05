@@ -67,8 +67,8 @@ limiter = Limiter(
 )
 
 # Allowed HTML tags for sanitization (XSS prevention)
-ALLOWED_TAGS = ['p', 'h5', 'h6', 'ul', 'ol', 'li', 'strong', 'em', 'i', 'b', 'br', 'span', 'div', 'class']
-ALLOWED_ATTRIBUTES = {'*': ['class']}
+ALLOWED_TAGS = ['p', 'h5', 'h6', 'ul', 'ol', 'li', 'strong', 'em', 'i', 'b', 'br', 'span', 'div']
+ALLOWED_ATTRIBUTES = {'*': ['class'], 'i': ['data-lucide', 'class']}
 
 def sanitize_html(html_content):
     """Sanitize HTML content to prevent XSS attacks"""
@@ -464,15 +464,65 @@ def check_ingredients(ingredients, condition):
 
 
 def format_recipe_html(recipe_text):
-    """Convert markdown recipe text to formatted HTML"""
+    """Convert markdown recipe text to formatted HTML with styled section cards"""
     if not recipe_text:
         return "<p class='text-muted'>No recipe instructions available.</p>"
+    
+    # Map section headings to icons and color themes
+    section_icons = {
+        'health': ('heart-pulse', 'health'),
+        'benefit': ('heart-pulse', 'health'),
+        'ingredient': ('shopping-basket', 'ingredients'),
+        'instruction': ('chef-hat', 'instructions'),
+        'step': ('chef-hat', 'instructions'),
+        'direction': ('chef-hat', 'instructions'),
+        'method': ('chef-hat', 'instructions'),
+        'preparation': ('chef-hat', 'instructions'),
+        'tip': ('lightbulb', 'tips'),
+        'note': ('info', 'tips'),
+        'suggestion': ('lightbulb', 'tips'),
+        'serving': ('utensils', 'serving'),
+        'nutrition': ('bar-chart-2', 'nutrition'),
+        'calori': ('flame', 'nutrition'),
+        'variation': ('sparkles', 'variations'),
+        'alternative': ('sparkles', 'variations'),
+        'storage': ('archive', 'tips'),
+        'warning': ('alert-triangle', 'warning'),
+        'caution': ('alert-triangle', 'warning'),
+    }
+    
+    def get_section_meta(header_text):
+        """Get icon and theme class for a section header"""
+        header_lower = header_text.lower()
+        for keyword, (icon, theme) in section_icons.items():
+            if keyword in header_lower:
+                return icon, theme
+        return 'file-text', 'default'
     
     html_parts = []
     lines = recipe_text.split('\n')
     current_section = ''
     current_content = []
     active_header = ''
+    section_open = False
+    
+    def flush_content():
+        """Render accumulated content and return HTML"""
+        nonlocal current_section, current_content
+        if current_content:
+            result = render_section_content(current_section, current_content)
+            current_section = ''
+            current_content = []
+            return result
+        return ''
+    
+    def close_section():
+        """Close the current section div if open"""
+        nonlocal section_open
+        if section_open:
+            section_open = False
+            return '</div></div>'
+        return ''
     
     for line in lines:
         line = line.strip()
@@ -480,88 +530,108 @@ def format_recipe_html(recipe_text):
             continue
             
         if line.startswith('**') and line.endswith('**'):
-            # Header
-            if current_content:
-                html_parts.append(render_current_section(current_section, current_content))
-            header_text = line.replace('**', '').strip()
+            # Header — start a new section card
+            flushed = flush_content()
+            if flushed:
+                html_parts.append(flushed)
+            
+            closed = close_section()
+            if closed:
+                html_parts.append(closed)
+            
+            header_text = line.replace('**', '').strip().rstrip(':')
             active_header = header_text.lower()
+            icon, theme = get_section_meta(header_text)
             
-            html_parts.append(f'<h6 class="text-success fw-bold mb-2">{header_text}</h6>')
-            
-            current_section = ''
-            current_content = []
+            section_open = True
+            html_parts.append(
+                f'<div class="recipe-section recipe-section--{theme}">'
+                f'<div class="recipe-section__header">'
+                f'<i data-lucide="{icon}" class="w-5 h-5"></i>'
+                f'<span>{header_text}</span>'
+                f'</div>'
+                f'<div class="recipe-section__body">'
+            )
         elif line.startswith('*') and line.endswith('*'):
-            # Italic text
+            # Italic/emphasis text
             if current_section != 'italic':
-                if current_content:
-                    html_parts.append(render_current_section(current_section, current_content))
+                flushed = flush_content()
+                if flushed:
+                    html_parts.append(flushed)
                 current_section = 'italic'
-                current_content = []
             italic_text = line.replace('*', '').strip()
-            html_parts.append(f'<strong><em class="text-success fw-light mb-2">{italic_text}</em></strong>')
+            html_parts.append(f'<p class="recipe-emphasis">{italic_text}</p>')
         elif line.startswith('- ') or line.startswith('* '):
             # List item
             if current_section != 'list':
-                if current_content:
-                    html_parts.append(render_current_section(current_section, current_content))
+                flushed = flush_content()
+                if flushed:
+                    html_parts.append(flushed)
                 current_section = 'list'
-                current_content = []
             clean_item = line.replace('- ', '').replace('* ', '').replace('**', '').strip()
             current_content.append(clean_item)
-            
-        elif any(line.startswith(f"{i}.") for i in range(1, 10)):
+        elif any(line.startswith(f"{i}.") for i in range(1, 20)):
             # Numbered list item
             if current_section != 'numbered':
-                if current_content:
-                    html_parts.append(render_current_section(current_section, current_content))
+                flushed = flush_content()
+                if flushed:
+                    html_parts.append(flushed)
                 current_section = 'numbered'
-                current_content = []
             clean_item = line.split('.', 1)[1].replace('**', '').strip()
             current_content.append(clean_item)
-            
         else:
             # Regular text
-            is_instruction = any(k in active_header for k in ['instruction', 'step', 'direction', 'method'])
+            is_instruction = any(k in active_header for k in ['instruction', 'step', 'direction', 'method', 'preparation'])
             if is_instruction:
                 if current_section != 'numbered':
-                    if current_content:
-                        html_parts.append(render_current_section(current_section, current_content))
+                    flushed = flush_content()
+                    if flushed:
+                        html_parts.append(flushed)
                     current_section = 'numbered'
-                    current_content = []
                 current_content.append(line.replace('**', '').strip())
             else:
                 if current_section in ['list', 'numbered']:
-                    html_parts.append(render_current_section(current_section, current_content))
+                    flushed = flush_content()
+                    if flushed:
+                        html_parts.append(flushed)
                     current_section = 'text'
-                    current_content = []
                 current_content.append(line.replace('**', '').strip())
     
     # Render final section
-    if current_content:
-        html_parts.append(render_current_section(current_section, current_content))
+    flushed = flush_content()
+    if flushed:
+        html_parts.append(flushed)
+    closed = close_section()
+    if closed:
+        html_parts.append(closed)
     
     return '\n'.join(html_parts)
 
-def render_current_section(section_type, content):
-    """Render the current section based on its type"""
+
+def render_section_content(section_type, content):
+    """Render a section's content based on its type"""
     if section_type == 'list':
         items_html = []
         for item in content:
-            items_html.append(f'<li class="mb-1"><i class="fas fa-check-circle text-success me-2"></i>{item}</li>')
-        return f'<ul class="list-unstyled ms-3 mb-3">{"".join(items_html)}</ul>'
+            items_html.append(f'<li><span class="recipe-list-bullet"></span><span>{item}</span></li>')
+        return f'<ul class="recipe-list">{"".join(items_html)}</ul>'
     elif section_type == 'numbered':
         items_html = []
-        for item in content:
-            # Check if there's an inline bold title like "Text:" at start
+        for idx, item in enumerate(content, 1):
+            # Bold inline titles like "Preheat: Do something"
             if ':' in item and not item.startswith('<strong'):
                 parts = item.split(':', 1)
-                # Ensure the title part isn't too long to be a title
                 if len(parts[0]) < 35:
                     item = f"<strong>{parts[0]}:</strong>{parts[1]}"
-            items_html.append(f'<li>{item}</li>')
-        return f'<ol class="recipe-steps-list">{"".join(items_html)}</ol>'
+            items_html.append(
+                f'<li>'
+                f'<span class="recipe-step-number">{idx}</span>'
+                f'<span class="recipe-step-text">{item}</span>'
+                f'</li>'
+            )
+        return f'<ol class="recipe-steps">{"".join(items_html)}</ol>'
     else:
-        return f'<p class="mb-3 lh-base">{" ".join(content)}</p>'
+        return f'<p class="recipe-text">{" ".join(content)}</p>'
 
 def generate_recipe(original_ingredients, safe_ingredients, replacements, condition, recipe_name=None):
     """Generate a modified recipe based on safe ingredients using Gemini API"""
