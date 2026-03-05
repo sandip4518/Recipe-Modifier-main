@@ -13,17 +13,18 @@
         rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Masonry Grid */
+        /* Equal-Height Card Grid */
         .masonry {
-            column-count: 1;
-            column-gap: var(--space-6);
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--space-6);
         }
         
         @media (min-width: 768px) {
-            .masonry { column-count: 2; }
+            .masonry { grid-template-columns: repeat(2, 1fr); }
         }
         @media (min-width: 1024px) {
-            .masonry { column-count: 3; }
+            .masonry { grid-template-columns: repeat(3, 1fr); }
         }
 
         .recipe-card {
@@ -39,8 +40,7 @@
             overflow: hidden;
             border: 1px solid var(--gray-200);
             cursor: pointer;
-            break-inside: avoid;
-            margin-bottom: var(--space-8);
+            height: 100%;
         }
 
         .recipe-card::before {
