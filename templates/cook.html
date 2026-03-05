@@ -6,18 +6,20 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ recipe.recipe_name if recipe.recipe_name else 'Cooking Mode' }} - HealthRecipeAI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
-            --cook-bg: #1e1e24;
-            --cook-surface: #2b2b36;
-            --cook-text: #f8f9fa;
-            --cook-text-muted: #adb5bd;
-            --cook-primary: #0ea5e9;
-            --cook-accent: #10b981;
+            --cook-bg: var(--gray-50, #f8fafc);
+            --cook-surface: #ffffff;
+            --cook-text: var(--gray-800, #1e293b);
+            --cook-text-muted: var(--gray-500, #64748b);
+            --cook-primary: var(--primary-600, #009e9e);
+            --cook-accent: var(--accent-500, #22c55e);
+            --cook-border: var(--gray-200, #e2e8f0);
             --space-2: 0.5rem;
             --space-4: 1rem;
             --space-6: 1.5rem;
@@ -35,55 +37,38 @@
             line-height: 1.6;
             font-size: 18px; /* Larger base font for tablet/mobile readability */
             -webkit-font-smoothing: antialiased;
-        }
-
-        .cook-header {
-            position: sticky;
-            top: 0;
-            background-color: rgba(30, 30, 36, 0.95);
-            backdrop-filter: blur(10px);
-            padding: var(--space-4) var(--space-6);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 100;
-        }
-
-        .btn-back {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--cook-text);
-            text-decoration: none;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 0.5rem 1rem;
-            border-radius: var(--radius-lg);
-            font-weight: 500;
-            transition: background 0.2s;
-        }
-
-        .btn-back:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(0, 176, 176, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 100% 0%, rgba(34, 197, 94, 0.05) 0%, transparent 50%);
+            background-attachment: fixed;
         }
 
         .wake-lock-btn {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--cook-accent);
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
             padding: 0.5rem 1rem;
             border-radius: var(--radius-lg);
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .wake-lock-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
         }
 
         .wake-lock-btn.active {
-            background: var(--cook-accent);
+            background: rgba(34, 197, 94, 0.2);
             color: white;
+            border-color: rgba(34, 197, 94, 0.4);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
         }
 
         .cook-container {
@@ -96,7 +81,7 @@
             font-size: 2.5rem;
             font-weight: 800;
             margin: 0 0 1rem 0;
-            background: linear-gradient(90deg, #0ea5e9, #10b981);
+            background: var(--gradient-primary);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -109,6 +94,11 @@
             display: flex;
             gap: 1rem;
             align-items: center;
+            font-weight: 500;
+        }
+        
+        .recipe-meta i {
+            color: var(--danger);
         }
 
         .section-card {
@@ -116,20 +106,36 @@
             border-radius: var(--radius-xl);
             padding: var(--space-6);
             margin-bottom: var(--space-8);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--cook-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--gradient-primary);
         }
 
         .section-title {
             font-size: 1.5rem;
-            font-weight: 700;
+            font-weight: 800;
             margin: 0 0 var(--space-4) 0;
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            color: var(--cook-text);
+            border-bottom: 2px dashed var(--cook-border);
+            padding-bottom: 1rem;
+        }
+        
+        .section-title i {
             color: var(--cook-primary);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 0.75rem;
         }
 
         /* Lists */
@@ -155,7 +161,7 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: var(--cook-accent);
+            background: var(--cook-primary);
         }
 
         .instructions-list {
@@ -177,8 +183,9 @@
             width: 2.2rem;
             height: 2.2rem;
             border-radius: 50%;
-            background: var(--cook-primary);
-            color: white;
+            background: var(--primary-50);
+            color: var(--cook-primary);
+            border: 2px solid rgba(0, 176, 176, 0.2);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -188,16 +195,32 @@
 
         .strike {
             text-decoration: line-through;
-            opacity: 0.5;
+            opacity: 0.6;
+            color: var(--cook-text-muted) !important;
         }
 
         .interactive-item {
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: all 0.2s;
+            padding: 0.75rem 0.5rem 0.75rem 3.5rem !important; /* adjust for hover area */
+            border-radius: var(--radius-lg);
+            margin-left: -0.5rem;
+        }
+        
+        .interactive-item::before {
+            top: 0.75rem !important; /* adjust to match padding */
+            left: 0.5rem !important;
         }
         
         .interactive-item:hover {
+            background-color: var(--gray-50);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        
+        .interactive-item.strike:hover {
             opacity: 0.8;
+            background-color: transparent;
+            box-shadow: none;
         }
 
         /* Checkbox styling for ingredients */
@@ -205,16 +228,21 @@
             display: flex;
             align-items: center;
             gap: 1rem;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
             font-size: 1.25rem;
-            padding: 0.5rem;
+            padding: 0.75rem 1rem;
             border-radius: var(--radius-lg);
-            transition: background 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
+            border: 1px solid transparent;
+            background: var(--gray-50);
         }
         
         .ing-check-wrap:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: white;
+            border-color: var(--cook-border);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05);
         }
 
         .ing-check-wrap input[type="checkbox"] {
@@ -222,11 +250,13 @@
             height: 1.5rem;
             accent-color: var(--cook-accent);
             cursor: pointer;
+            flex-shrink: 0;
         }
 
         /* Misc */
         b, strong {
-            color: white;
+            color: var(--cook-text);
+            font-weight: 700;
         }
 
         @media (max-width: 768px) {
@@ -244,18 +274,18 @@
 </head>
 
 <body>
-    <header class="cookbook-header" style="background: var(--cook-bg); border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-        <div class="container" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+    <header class="cookbook-header">
+        <div class="container">
             <div class="header-left">
-                <a href="{{ url_for('cookbook') }}" class="btn-glass back-btn" style="background: rgba(255, 255, 255, 0.1);">
+                <a href="{{ url_for('cookbook') }}" class="btn-glass back-btn">
                     <i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i> Back
                 </a>
-                <div class="header-title" style="margin-left: 1rem;">
-                    <h1 style="font-size: 1.25rem; margin: 0; color: white;">Cooking Mode</h1>
+                <div class="header-title">
+                    <h1>Cooking Mode</h1>
                 </div>
             </div>
             <div class="header-right">
-                <button id="wakeLockBtn" class="btn-glass wake-lock-btn" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.3); color: var(--cook-accent);">
+                <button id="wakeLockBtn" class="wake-lock-btn">
                     <i data-lucide="monitor" class="w-5 h-5 mr-2"></i> <span id="wakeLockText">Keep Screen On</span>
                 </button>
             </div>
