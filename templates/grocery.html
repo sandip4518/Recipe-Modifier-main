@@ -19,13 +19,13 @@
         <header class="cookbook-header">
             <div class="container">
                 <div class="header-left">
-                    <a href="{{ url_for('index') }}" class="logo-link" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem;">
-                        <i data-lucide="salad" class="w-8 h-8 text-primary"></i>
-                        <div class="header-title">
-                            <h1 style="font-size: 1.25rem; font-weight: 800; margin: 0; line-height: 1;">HealthRecipeAI</h1>
-                            <p style="font-size: 0.75rem; margin: 0; opacity: 0.8;">Eat smart. Cook safe.</p>
-                        </div>
+                    <a href="{{ url_for('planner') }}" class="btn-glass back-btn">
+                        <i data-lucide="arrow-left" class="inline-block w-4 h-4 mr-1"></i> Back to Planner
                     </a>
+                    <div class="header-title">
+                        <h1><i data-lucide="shopping-cart" class="inline-block w-6 h-6 mr-2 text-primary" style="vertical-align: text-bottom;"></i> Grocery List</h1>
+                        <p>Everything you need for the week</p>
+                    </div>
                     <button class="mobile-menu-toggle" onclick="toggleMobileNav(this)" aria-label="Toggle navigation">
                         <span></span><span></span><span></span>
                     </button>
@@ -33,7 +33,7 @@
                 <div class="header-right">
                     <button class="btn-glass" onclick="window.print()">
                         <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Print List
-                    </a>
+                    </button>
                     {% if current_user.is_authenticated %}
                     <a href="{{ url_for('profile') }}" class="btn-glass profile-link">
                         <i data-lucide="user" class="w-4 h-4 mr-2"></i>
@@ -48,19 +48,34 @@
         </header>
 
         <!-- Main Content -->
-        <main class="main-content" style="padding: var(--space-10) 0;">
+        <main class="main-content" style="padding: var(--space-10) 0; background-color: var(--gray-50); min-height: 100vh;">
             <div class="container" style="max-width: 800px; margin: auto;">
-                <div style="background: white; padding: var(--space-8); border-radius: var(--radius-2xl); box-shadow: var(--shadow-sm);">
+                <div class="grocery-glass-card" style="background: white; padding: var(--space-8); border-radius: var(--radius-2xl); box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.8);">
                     
                     {% if items %}
-                        <div class="checklist">
+                        <div class="grocery-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); border-bottom: 2px dashed var(--gray-200); padding-bottom: var(--space-4);">
+                            <h2 style="font-size: 1.5rem; color: var(--gray-800); font-weight: 800; display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="shopping-basket" class="text-primary w-6 h-6"></i> Weekly Checklist</h2>
+                            <span style="background: var(--primary-50); color: var(--primary-700); padding: var(--space-1.5) var(--space-3); border-radius: var(--radius-full); font-size: 0.875rem; font-weight: 700; border: 1px solid var(--primary-100);">{{ items|length }} Items</span>
+                        </div>
+                        <div class="checklist" style="display: flex; flex-direction: column; gap: var(--space-3);">
                             {% for item in items %}
-                            <label class="grocery-item" style="display: flex; align-items: center; padding: var(--space-3); border-bottom: 1px solid var(--gray-100); cursor: pointer; transition: background 0.2s; border-radius: var(--radius-md);">
-                                <input type="checkbox" onchange="toggleItem(this, '{{ item.name }}')" {% if item.checked %}checked{% endif %} style="width: 1.25rem; height: 1.25rem; margin-right: var(--space-4); accent-color: var(--primary-500); cursor: pointer;">
-                                <span class="item-name {{ 'checked' if item.checked else '' }}" style="font-size: 1.1rem; color: var(--gray-800); font-weight: 500; flex-grow: 1; text-transform: capitalize;">{{ item.name }}</span>
-                                <span class="item-count" style="background: var(--gray-100); color: var(--gray-600); padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 600;">Qty: {{ item.count }}</span>
+                            <label class="grocery-item {% if item.checked %}is-checked{% endif %}" style="display: flex; align-items: center; padding: var(--space-4); background: var(--gray-50); border: 1px solid var(--gray-100); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-radius: var(--radius-xl); box-shadow: 0 2px 4px rgba(0,0,0,0.02); position: relative; overflow: hidden;">
+                                <div class="checkbox-wrapper" style="position: relative; display: flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; margin-right: var(--space-4); flex-shrink: 0;">
+                                    <input type="checkbox" onchange="toggleItem(this, '{{ item.name }}')" {% if item.checked %}checked{% endif %} style="width: 100%; height: 100%; accent-color: var(--primary-600); cursor: pointer; border-radius: var(--radius-sm); border: 2px solid var(--gray-300); transition: all 0.2s;">
+                                </div>
+                                <span class="item-name" style="font-size: 1.1rem; color: var(--gray-800); font-weight: 600; flex-grow: 1; text-transform: capitalize; transition: all 0.3s;">{{ item.name }}</span>
+                                <span class="item-count" style="background: white; color: var(--gray-700); padding: var(--space-1.5) var(--space-3); border-radius: var(--radius-lg); font-size: 0.85rem; font-weight: 700; border: 1px solid var(--gray-200); box-shadow: 0 1px 2px rgba(0,0,0,0.05); min-width: 3.5rem; text-align: center;">{{ item.count }}</span>
+                                <button type="button" class="remove-btn" onclick="removeItem(event, '{{ item.name }}')" style="background: transparent; border: none; color: var(--gray-400); cursor: pointer; padding: 4px; border-radius: 4px; margin-left: 8px;">
+                                    <i data-lucide="trash-2" style="width: 1.25rem; height: 1.25rem; transition: color 0.2s;"></i>
+                                </button>
                             </label>
                             {% endfor %}
+                        </div>
+                        <div class="add-item-form" style="display: flex; gap: var(--space-2); margin-top: var(--space-6);">
+                            <input type="text" id="newItemInput" placeholder="Add an item manually..." style="flex-grow: 1; padding: var(--space-3) var(--space-4); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); font-family: inherit; font-size: 1rem; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--primary-400)'" onblur="this.style.borderColor='var(--gray-200)'" onkeypress="if(event.key === 'Enter') addItem()">
+                            <button onclick="addItem()" class="btn btn-primary" style="padding: 0 var(--space-4); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                <i data-lucide="plus" style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;"></i> Add
+                            </button>
                         </div>
                     {% else %}
                         <div class="empty-state" style="text-align: center; padding: 3rem 0; color: var(--gray-500);">
@@ -92,11 +107,9 @@
             const span = label.querySelector('.item-name');
             
             if (checkboxEl.checked) {
-                span.style.textDecoration = 'line-through';
-                span.style.color = 'var(--gray-400)';
+                label.classList.add('is-checked');
             } else {
-                span.style.textDecoration = 'none';
-                span.style.color = 'var(--gray-800)';
+                label.classList.remove('is-checked');
             }
             
             if (listId && listId !== 'None') {
@@ -108,11 +121,61 @@
             }
         }
         
+        function removeItem(e, itemName) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (listId && listId !== 'None') {
+                fetch('/api/grocery/remove/' + listId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: itemName })
+                }).then(res => res.json()).then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                });
+            }
+        }
+        
+        function addItem() {
+            const input = document.getElementById('newItemInput');
+            const itemName = input.value.trim();
+            if (!itemName) return;
+            
+            if (listId && listId !== 'None') {
+                fetch('/api/grocery/add/' + listId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: itemName })
+                }).then(res => res.json()).then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else if (data.error) {
+                        alert(data.error);
+                    }
+                });
+            }
+        }
+        
     </script>
     
     <style>
-        .grocery-item:hover {
-            background-color: var(--gray-50);
+        .grocery-item.is-checked {
+            opacity: 0.7;
+            background: transparent !important;
+        }
+        .grocery-item.is-checked .item-name {
+            text-decoration: line-through;
+            color: var(--gray-400) !important;
+        }
+        .grocery-item:hover:not(.is-checked) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px -4px rgba(0,0,0,0.05);
+            border-color: var(--primary-200) !important;
+            background-color: white !important;
+        }
+        .remove-btn:hover i {
+            color: #ef4444 !important;
         }
         @media print {
             .cookbook-header, .back-btn, .header-right {

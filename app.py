@@ -2282,12 +2282,19 @@ def generate_grocery_list():
         # Get corresponding food entries
         entries = list(get_food_entries().find({"_id": {"$in": entry_ids}}))
         
+        STOP_WORDS = {'chopped', 'minced', 'grated', 'diced', 'sliced', 'peeled', 'crushed', 'fresh', 'dried', 'dry', 'frozen', 'canned', 'cooked', 'raw', 'to taste', 'optional', 'pinch', 'dash', 'small', 'medium', 'large', 'taste', 'garnish', 'instructions', 'directions'}
+        
         # Aggregate ingredients
         all_ingredients = []
         for entry in entries:
             # Prefer safe ingredients if available, else input ingredients
             ings = entry.get('safe') or entry.get('input_ingredients') or []
-            all_ingredients.extend([i.strip().lower() for i in ings if i and i.strip()])
+            for i in ings:
+                if not i or not i.strip(): continue
+                name = i.strip().lower()
+                if name in STOP_WORDS:
+                    continue
+                all_ingredients.append(name)
         
         # Simple deduplication and counting
         from collections import Counter
@@ -2339,6 +2346,48 @@ def toggle_grocery_item(list_id):
         get_grocery_lists().update_one(
             {"_id": ObjectId(list_id), "user_id": current_user.user_id, "items.name": item_name},
             {"$set": {"items.$.checked": checked}}
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/grocery/add/<list_id>', methods=['POST'])
+@login_required
+def add_grocery_item(list_id):
+    try:
+        data = request.get_json()
+        item_name = data.get('name')
+        if not item_name: return jsonify({"error": "Item name required"}), 400
+        
+        list_doc = get_grocery_lists().find_one({"_id": ObjectId(list_id), "user_id": current_user.user_id})
+        if not list_doc: return jsonify({"error": "List not found"}), 404
+        
+        items = list_doc.get('items', [])
+        for it in items:
+            if it['name'].lower() == item_name.lower():
+                it['count'] += 1
+                get_grocery_lists().update_one({"_id": ObjectId(list_id)}, {"$set": {"items": items}})
+                return jsonify({"success": True, "action": "updated"})
+        
+        new_item = {"name": item_name.lower(), "count": 1, "checked": False}
+        get_grocery_lists().update_one(
+            {"_id": ObjectId(list_id), "user_id": current_user.user_id},
+            {"$push": {"items": new_item}}
+        )
+        return jsonify({"success": True, "action": "added"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/grocery/remove/<list_id>', methods=['POST'])
+@login_required
+def remove_grocery_item_route(list_id):
+    try:
+        data = request.get_json()
+        item_name = data.get('name')
+        
+        get_grocery_lists().update_one(
+            {"_id": ObjectId(list_id), "user_id": current_user.user_id},
+            {"$pull": {"items": {"name": item_name}}}
         )
         return jsonify({"success": True})
     except Exception as e:
