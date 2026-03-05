@@ -42,8 +42,8 @@ def validate_env_vars():
     else:
         print("✅ All critical environment variables are set")
 
-# Only validate in production/serverless (not local dev)
-if os.environ.get('VERCEL') or os.environ.get('VERCEL_ENV'):
+# Only validate in production (Render)
+if os.environ.get('RENDER'):
     validate_env_vars()
 
 app = Flask(__name__, 
@@ -658,12 +658,13 @@ def generate_recipe(original_ingredients, safe_ingredients, replacements, condit
     return recipe
 
 def _reports_dir():
-    """Return a writable reports directory (handles Vercel /tmp)."""
-    # Check if we're on Vercel (serverless environment)
-    # Vercel sets VERCEL=1 or we can check if /tmp exists and is writable
-    is_vercel = os.environ.get('VERCEL') == '1' or os.environ.get('VERCEL_ENV') is not None
-    if is_vercel:
-        base_dir = '/tmp/reports'
+    """Return a writable reports directory."""
+    # Render or other production environments
+    is_production = os.environ.get('RENDER') == 'true'
+    if is_production:
+        # On Render, reports should ideally be in a persistent disk
+        # but we use the reports directory which can be mounted
+        base_dir = os.path.join(os.getcwd(), 'reports')
     else:
         base_dir = 'reports'
     os.makedirs(base_dir, exist_ok=True)

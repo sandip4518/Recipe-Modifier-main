@@ -207,11 +207,10 @@ The system supports two deployment modes:
 - Local MongoDB instance
 - File-based PDF storage in `reports/` directory
 
-**Production (Vercel Serverless)**:
-- Serverless function deployment via `api/index.py`
+**Production (Render Web Service)**:
+- Standard Web Service deployment via `app.py`
 - MongoDB Atlas cloud database
-- Temporary file storage in `/tmp/reports`
-- Lazy database connection initialization for cold start optimization
+- Persistent file storage via Render Disks (mounted to `/reports`)
 - Environment variable-based configuration
 
 ---
@@ -396,9 +395,9 @@ For each food entry:
 Local Development:
   Path: ./reports/patient_{user_id}_report.pdf
 
-Production (Vercel):
-  Path: /tmp/reports/patient_{user_id}_report.pdf
-  Note: Temporary storage, cleared between invocations
+Production (Render):
+  Path: ./reports/patient_{user_id}_report.pdf
+  Note: Persistent storage if using Render Disks, otherwise ephemeral
 ```
 
 ---
@@ -453,7 +452,7 @@ Production (Vercel):
 ### 5.6 Deployment Platforms
 
 **Local Development**: Flask development server
-**Production**: Vercel serverless functions
+**Production**: Render Web Service
 **Database**: MongoDB Atlas (cloud)
 
 ---

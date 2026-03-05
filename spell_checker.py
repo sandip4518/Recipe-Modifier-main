@@ -2,7 +2,7 @@
 Spell Checker Service for Recipe Names
 
 Uses Python's built-in difflib for fuzzy matching - NO external dependencies!
-Optimized for Vercel serverless deployment (lightweight).
+Optimized for lightweight production deployment.
 """
 
 import os
