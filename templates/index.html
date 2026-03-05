@@ -22,6 +22,9 @@
         <header class="cookbook-header">
             <div class="container">
                 <div class="header-left">
+                    <a href="{{ url_for('landing_page') }}" class="btn-glass back-btn" style="margin-right: 1rem;">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back to Home
+                    </a>
                     <a href="{{ url_for('index') }}" class="logo-link" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem;">
                         <i data-lucide="salad" class="w-8 h-8 text-primary"></i>
                         <div class="header-title">
@@ -102,7 +105,10 @@
                                 </label>
                                 <div class="input-group">
                                     <input type="text" class="form-input" id="recipeName" name="recipe_name"
-                                        placeholder="e.g., Banana Bread, Pancakes">
+                                        placeholder="e.g., Banana Bread, Pancakes"
+                                        minlength="3" maxlength="100"
+                                        pattern="^[a-zA-Z0-9\s\-']+$"
+                                        title="Recipe name can only contain letters, numbers, spaces, hyphens, and apostrophes.">
                                     <button type="button" class="btn-ai" id="aiFillIngredients">
                                         <i data-lucide="sparkles" class="inline-block w-4 h-4 mr-1"></i> AI Auto-Fill
                                     </button>
@@ -113,6 +119,11 @@
                                 <div id="spellSuggestions" class="spell-suggestion" style="display: none;">
                                     <span class="spell-label">Did you mean:</span>
                                     <span id="spellSuggestionLinks"></span>
+                                </div>
+                                <!-- Invalid Recipe Error -->
+                                <div id="invalidRecipeError" style="display: none; color: var(--danger); font-size: 0.85rem; margin-top: 0.5rem; align-items: center; gap: 0.25rem;">
+                                    <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                                    Doesn't look like a real recipe. Please check your spelling.
                                 </div>
                             </div>
 
@@ -837,6 +848,7 @@
             const submitBtn = document.getElementById("submitBtn");
             const spellSuggestionsDiv = document.getElementById("spellSuggestions");
             const spellSuggestionLinks = document.getElementById("spellSuggestionLinks");
+            const invalidRecipeError = document.getElementById("invalidRecipeError");
 
             // Auto-resize textarea + debounced profile warning check
             let profileWarningTimeout = null;
@@ -895,11 +907,50 @@
                         if (aiWarningModal) aiWarningModal.style.display = 'flex';
                         return;
                     }
+
+                    if (!recipeInput.checkValidity()) {
+                        recipeInput.reportValidity();
+                        return;
+                    }
                     
                     const sourceText = recipeNameText;
 
                     aiFillButton.disabled = true;
                     const originalHtml = aiFillButton.innerHTML;
+                    aiFillButton.innerHTML = '<span class="spinner"></span> Checking...';
+
+                    // Explicitly spell-check before doing AI Auto-Fill to catch rapid clicks
+                    try {
+                        const spellResp = await fetch("/api/spell-check", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ recipe_name: sourceText })
+                        });
+                        const spellData = await spellResp.json();
+                        
+                        if (!spellData.is_correct) {
+                            if (spellData.suggestions && spellData.suggestions.length > 0) {
+                                spellSuggestionLinks.innerHTML = spellData.suggestions.map(s =>
+                                    `<a href="#" class="spell-link" data-recipe="${s}">${s}</a>`
+                                ).join(", ");
+                                spellSuggestionsDiv.style.display = "block";
+                                invalidRecipeError.style.display = "none";
+                                recipeInput.setCustomValidity("Did you mean: " + spellData.suggestions[0] + "?");
+                            } else {
+                                spellSuggestionsDiv.style.display = "none";
+                                invalidRecipeError.style.display = "flex";
+                                recipeInput.setCustomValidity("Please enter a valid recipe name.");
+                                lucide.createIcons();
+                            }
+                            recipeInput.reportValidity();
+                            aiFillButton.disabled = false;
+                            aiFillButton.innerHTML = originalHtml;
+                            return; // Stop auto-fill completely if misspelled or gibberish
+                        }
+                    } catch (err) {
+                        console.error("Spell check error during AI fill:", err);
+                    }
+
                     aiFillButton.innerHTML = '<span class="spinner"></span> Filling...';
 
                     try {
@@ -952,6 +1003,8 @@
                     // Hide suggestions if input is too short
                     if (recipeName.length < 2) {
                         spellSuggestionsDiv.style.display = "none";
+                        invalidRecipeError.style.display = "none";
+                        recipeInput.setCustomValidity("");
                         return;
                     }
 
@@ -965,18 +1018,30 @@
                             });
                             const data = await resp.json();
 
-                            // Show suggestions if not correct and suggestions exist
-                            if (!data.is_correct && data.suggestions && data.suggestions.length > 0) {
-                                spellSuggestionLinks.innerHTML = data.suggestions.map(s =>
-                                    `<a href="#" class="spell-link" data-recipe="${s}">${s}</a>`
-                                ).join(", ");
-                                spellSuggestionsDiv.style.display = "block";
+                            if (!data.is_correct) {
+                                if (data.suggestions && data.suggestions.length > 0) {
+                                    spellSuggestionLinks.innerHTML = data.suggestions.map(s =>
+                                        `<a href="#" class="spell-link" data-recipe="${s}">${s}</a>`
+                                    ).join(", ");
+                                    spellSuggestionsDiv.style.display = "block";
+                                    invalidRecipeError.style.display = "none";
+                                    recipeInput.setCustomValidity("Did you mean: " + data.suggestions[0] + "?");
+                                } else {
+                                    spellSuggestionsDiv.style.display = "none";
+                                    invalidRecipeError.style.display = "flex";
+                                    recipeInput.setCustomValidity("Please enter a valid recipe name.");
+                                    lucide.createIcons();
+                                }
                             } else {
                                 spellSuggestionsDiv.style.display = "none";
+                                invalidRecipeError.style.display = "none";
+                                recipeInput.setCustomValidity("");
                             }
                         } catch (error) {
                             console.error("Spell check error:", error);
                             spellSuggestionsDiv.style.display = "none";
+                            invalidRecipeError.style.display = "none";
+                            recipeInput.setCustomValidity("");
                         }
                     }, 400);
                 });
@@ -988,6 +1053,8 @@
                         const correctedName = e.target.dataset.recipe;
                         recipeInput.value = correctedName;
                         spellSuggestionsDiv.style.display = "none";
+                        invalidRecipeError.style.display = "none";
+                        recipeInput.setCustomValidity("");
                         recipeInput.focus();
                     }
                 });
