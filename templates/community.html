@@ -305,6 +305,9 @@
                             <p style="font-size: 0.75rem; margin: 0; opacity: 0.8;">Eat smart. Cook safe.</p>
                         </div>
                     </a>
+                    <button class="mobile-menu-toggle" onclick="toggleMobileNav(this)" aria-label="Toggle navigation">
+                        <span></span><span></span><span></span>
+                    </button>
                 </div>
                 <div class="header-right">
                     <a href="{{ url_for('pantry') }}" class="btn-glass">
@@ -458,6 +461,11 @@
         }
 
         lucide.createIcons();
+        function toggleMobileNav(btn) {
+            btn.classList.toggle('active');
+            const headerRight = btn.closest('.container').querySelector('.header-right');
+            if (headerRight) headerRight.classList.toggle('mobile-nav-open');
+        }
         
         // Modal Logic
         const modal = document.getElementById('recipeModal');

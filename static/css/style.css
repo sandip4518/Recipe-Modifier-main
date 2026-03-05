@@ -5325,58 +5325,146 @@ section {
     transform: translateY(0);
 }
 
-@media (max-width: 768px) {
-    .cookbook-header .container {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-4);
-    }
-    
-    .header-left {
-        width: 100%;
-        gap: var(--space-3);
-    }
-    
-    .header-right {
-        width: 100%;
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--space-2);
-    }
-    
-    .header-right .btn-glass {
-        padding: var(--space-2);
-        font-size: 0.75rem;
-    }
-    
-    .header-title h1 {
-        font-size: 1.25rem;
-    }
-}
-
 .btn-glass i {
     width: 1.125rem;
     height: 1.125rem;
 }
 
+/* Mobile Menu Toggle Button */
+.mobile-menu-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.3s ease;
+    gap: 5px;
+}
+
+.mobile-menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.mobile-menu-toggle span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: white;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-toggle.active span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.mobile-menu-toggle.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.mobile-menu-toggle.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* ---- Tablet: 1024px ---- */
 @media (max-width: 1024px) {
     .cookbook-header .container {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-4);
+        flex-wrap: wrap;
     }
     
     .header-right {
-        width: 100%;
-        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+    
+    .header-right .btn-glass {
+        padding: var(--space-2) var(--space-3);
+        font-size: 0.8125rem;
     }
 }
 
-@media (max-width: 640px) {
+/* ---- Mobile: 768px ---- */
+@media (max-width: 768px) {
+    .cookbook-header .container {
+        position: relative;
+    }
+
     .header-left {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .mobile-menu-toggle {
+        display: flex;
+    }
+    
+    .header-right {
+        display: none;
+        width: 100%;
         flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-3);
+        gap: var(--space-2);
+        padding-top: var(--space-4);
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        margin-top: var(--space-3);
+        animation: mobileNavSlideDown 0.3s ease;
+    }
+    
+    .header-right.mobile-nav-open {
+        display: flex;
+    }
+    
+    .header-right .btn-glass {
+        width: 100%;
+        justify-content: flex-start;
+        padding: var(--space-3) var(--space-4);
+        font-size: 0.875rem;
+        border-radius: var(--radius-lg);
+    }
+    
+    .header-right .logout-btn {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: var(--space-3);
+        margin-top: var(--space-1);
+    }
+    
+    .header-title h1 {
+        font-size: 1.25rem;
+    }
+    
+    .header-title p {
+        font-size: 0.8125rem;
+    }
+}
+
+@keyframes mobileNavSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ---- Small Mobile: 480px ---- */
+@media (max-width: 480px) {
+    .cookbook-header {
+        padding: var(--space-4) 0;
+    }
+    
+    .header-title h1 {
+        font-size: 1.1rem;
+    }
+    
+    .header-title p {
+        font-size: 0.75rem;
     }
     
     .btn-glass {
@@ -5965,5 +6053,444 @@ section {
         left: 1rem;
         max-width: none;
         width: auto;
+    }
+}
+
+/* ============================================
+   Toggle Switch Component
+   ============================================ */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+    flex-shrink: 0;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--gray-300, #d1d5db);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+input:checked + .slider {
+    background: var(--gradient-primary, linear-gradient(135deg, #00b0b0, #3b82f6));
+    box-shadow: 0 2px 8px rgba(0, 176, 176, 0.3);
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 0 3px rgba(0, 176, 176, 0.15);
+}
+
+input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+/* Rounded sliders */
+.slider.round {
+    border-radius: 26px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* ============================================
+   COMPREHENSIVE RESPONSIVE FIXES
+   All page elements mobile/tablet adjustments
+   ============================================ */
+
+/* ---- Index Page ---- */
+@media (max-width: 768px) {
+    .index-page .main-content,
+    .main-content {
+        padding: var(--space-6) 0;
+    }
+    
+    .section-intro h2 {
+        font-size: 1.35rem;
+    }
+    
+    .main-card .card-body,
+    .card-body {
+        padding: var(--space-5);
+    }
+    
+    .input-group {
+        flex-direction: column;
+    }
+    
+    .input-group .form-input {
+        width: 100%;
+    }
+    
+    .input-group .btn-ai {
+        width: 100%;
+    }
+    
+    .form-section {
+        margin-bottom: var(--space-4);
+    }
+    
+    .report-card {
+        padding: var(--space-4);
+    }
+    
+    .report-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+    
+    .report-card-header .btn-report {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .section-intro h2 {
+        font-size: 1.15rem;
+    }
+    
+    .main-card .card-header h3 {
+        font-size: 1rem;
+    }
+    
+    .condition-display {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2);
+    }
+    
+    .condition-display .link {
+        align-self: flex-end;
+    }
+}
+
+/* ---- Recipe Grid (Cookbook) ---- */
+@media (max-width: 768px) {
+    .recipe-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-6);
+    }
+    
+    .filter-bar {
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+    
+    .search-box {
+        min-width: 0;
+        width: 100%;
+    }
+    
+    .filter-group {
+        width: 100%;
+    }
+    
+    .filter-select {
+        width: 100%;
+    }
+}
+
+/* ---- Planner Page ---- */
+@media (max-width: 768px) {
+    .planner-container {
+        flex-direction: column;
+    }
+    
+    .planner-sidebar {
+        width: 100%;
+        position: static;
+    }
+    
+    .planner-sidebar-body {
+        max-height: 30vh;
+    }
+    
+    .planner-calendar-area {
+        padding: var(--space-4);
+    }
+    
+    .fc .fc-toolbar {
+        flex-direction: column;
+        gap: var(--space-2) !important;
+    }
+    
+    .fc .fc-toolbar-title {
+        font-size: 1.15rem !important;
+    }
+    
+    .fc .fc-daygrid-day {
+        min-height: 70px;
+    }
+    
+    .fc-dayGridWeek-view .fc-daygrid-day {
+        min-height: 90px;
+    }
+    
+    .fc-daygrid-event {
+        font-size: 0.7rem !important;
+        padding: 2px 4px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .planner-calendar-area {
+        padding: var(--space-3);
+    }
+    
+    .fc .fc-toolbar-title {
+        font-size: 1rem !important;
+    }
+    
+    .fc .fc-button-primary {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.6rem;
+    }
+    
+    .fc .fc-col-header-cell-cushion {
+        padding: 6px 2px;
+        font-size: 0.65rem;
+    }
+}
+
+/* ---- Community Page ---- */
+@media (max-width: 768px) {
+    .community-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .community-card {
+        padding: var(--space-5);
+    }
+}
+
+/* ---- Profile Page ---- */
+@media (max-width: 768px) {
+    .profile-header .container,
+    .app-header .container,
+    .results-header .container {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-3);
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+    }
+    
+    .action-buttons {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+    }
+    
+    .tabs-header {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    
+    .tabs-header::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .tab-btn {
+        white-space: nowrap;
+        min-width: 100px;
+        font-size: 0.8125rem;
+        padding: var(--space-3);
+    }
+    
+    .history-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .history-table th,
+    .history-table td {
+        font-size: 0.8125rem;
+        padding: var(--space-2) var(--space-3);
+        white-space: nowrap;
+    }
+}
+
+/* ---- Result Page ---- */
+@media (max-width: 768px) {
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .results-card .card-body {
+        padding: var(--space-5);
+    }
+    
+    .ingredients-grid {
+        gap: var(--space-1);
+    }
+    
+    .ingredient-badge {
+        font-size: 0.8125rem;
+        padding: var(--space-1) var(--space-3);
+    }
+    
+    .recipe-content {
+        padding: var(--space-4);
+    }
+    
+    .tips-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .recipe-actions {
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+    
+    .fav-action-btn {
+        font-size: 0.8125rem;
+        padding: 0.5rem 0.875rem;
+    }
+    
+    .custom-dropdown-trigger {
+        font-size: 0.8125rem;
+        padding: 0.5rem 0.875rem;
+    }
+}
+
+/* ---- Grocery Page ---- */
+@media (max-width: 480px) {
+    .grocery-item {
+        padding: var(--space-2) !important;
+    }
+    
+    .grocery-item .item-name {
+        font-size: 0.95rem !important;
+    }
+    
+    .grocery-item .item-count {
+        font-size: 0.75rem !important;
+        padding: var(--space-1) var(--space-2) !important;
+    }
+}
+
+/* ---- Modals - full-screen on mobile ---- */
+@media (max-width: 640px) {
+    .modal-content {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+        max-width: 100%;
+    }
+    
+    .modal-header {
+        padding: var(--space-4) var(--space-5);
+    }
+    
+    .modal-header h2 {
+        font-size: 1.15rem;
+    }
+    
+    .modal-body {
+        padding: var(--space-4) var(--space-5);
+        max-height: calc(100vh - 180px);
+    }
+    
+    .modal-footer {
+        padding: var(--space-3) var(--space-5);
+    }
+    
+    .confirm-card {
+        padding: 1.5rem 1.25rem;
+        border-radius: var(--radius-xl);
+    }
+    
+    .confirm-title {
+        font-size: 1.15rem;
+    }
+    
+    .confirm-buttons {
+        flex-direction: column;
+    }
+    
+    .meal-modal-content {
+        width: 92vw;
+    }
+}
+
+/* ---- General typography scaling for mobile ---- */
+@media (max-width: 480px) {
+    body {
+        font-size: 0.9375rem;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    h2 {
+        font-size: 1.25rem;
+    }
+    
+    h3 {
+        font-size: 1.1rem;
+    }
+    
+    .container {
+        padding: 0 var(--space-3);
+    }
+}
+
+/* ---- Ensure images and overflowing elements are contained ---- */
+.main-content,
+.planner-page,
+.cookbook-page,
+.grocery-page,
+.community-page {
+    overflow-x: hidden;
+}
+
+/* ---- Loading overlay responsive ---- */
+@media (max-width: 480px) {
+    .loading-content {
+        padding: 2rem 1.5rem;
+        margin: 0 1rem;
+        border-radius: var(--radius-xl);
+    }
+    
+    .loading-title {
+        font-size: 1.15rem;
+    }
+    
+    .loading-message {
+        font-size: 0.875rem;
     }
 }

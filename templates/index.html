@@ -28,6 +28,9 @@
                             <p style="font-size: 0.75rem; margin: 0; opacity: 0.8;">Eat smart. Cook safe.</p>
                         </div>
                     </a>
+                    <button class="mobile-menu-toggle" onclick="toggleMobileNav(this)" aria-label="Toggle navigation">
+                        <span></span><span></span><span></span>
+                    </button>
                 </div>
                 <div class="header-right">
                     <a href="{{ url_for('community_board') }}" class="btn-glass">
@@ -175,12 +178,12 @@
                             {% endif %}
                             
                             <!-- Budget Toggle -->
-                            <div class="form-section" style="display: flex; align-items: center; justify-content: space-between; background: var(--gray-50); padding: var(--space-4); border-radius: var(--radius-lg); border: 1px solid var(--gray-200);">
-                                <div>
+                            <div class="form-section" style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); background: var(--gray-50); padding: var(--space-4); border-radius: var(--radius-lg); border: 1px solid var(--gray-200);">
+                                <div style="flex: 1; min-width: 0;">
                                     <label for="optimizeBudget" style="font-weight: 600; color: var(--gray-800); display: flex; align-items: center; cursor: pointer;">
                                         <i data-lucide="piggy-bank" class="w-4 h-4 mr-2 text-primary"></i> Optimize for Budget
                                     </label>
-                                    <p style="font-size: 0.85rem; color: var(--gray-500); margin-top: 0.25rem;">Estimate recipe cost and suggest cheaper alternatives</p>
+                                    <p style="font-size: 0.85rem; color: var(--gray-500); margin: 0.25rem 0 0 0;">Estimate recipe cost and suggest cheaper alternatives</p>
                                 </div>
                                 <label class="switch">
                                     <input type="checkbox" id="optimizeBudget" name="optimize_budget">
@@ -799,6 +802,13 @@
 
         // Initialize Lucide icons
         lucide.createIcons();
+
+        // Mobile Navigation Toggle
+        function toggleMobileNav(btn) {
+            btn.classList.toggle('active');
+            const headerRight = btn.closest('.container').querySelector('.header-right');
+            if (headerRight) headerRight.classList.toggle('mobile-nav-open');
+        }
 
         document.addEventListener("DOMContentLoaded", function () {
             const ingredientsTextarea = document.getElementById("ingredients");

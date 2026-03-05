@@ -24,6 +24,9 @@
                         <h1><i data-lucide="layout-grid" class="inline-block w-8 h-8 mr-2"></i> Smart Pantry</h1>
                         <p>Manage your ingredients and find what to cook</p>
                     </div>
+                    <button class="mobile-menu-toggle" onclick="toggleMobileNav(this)" aria-label="Toggle navigation">
+                        <span></span><span></span><span></span>
+                    </button>
                 </div>
                 <div class="header-right">
                     <a href="{{ url_for('community_board') }}" class="btn-glass">
@@ -152,6 +155,11 @@
         }
 
         lucide.createIcons();
+        function toggleMobileNav(btn) {
+            btn.classList.toggle('active');
+            const headerRight = btn.closest('.container').querySelector('.header-right');
+            if (headerRight) headerRight.classList.toggle('mobile-nav-open');
+        }
 
         document.getElementById('add-item-form').addEventListener('submit', function(e) {
             e.preventDefault();

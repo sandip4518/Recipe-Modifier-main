@@ -267,6 +267,9 @@
                             <p style="font-size: 0.75rem; margin: 0; opacity: 0.8;">Eat smart. Cook safe.</p>
                         </div>
                     </a>
+                    <button class="mobile-menu-toggle" onclick="toggleMobileNav(this)" aria-label="Toggle navigation">
+                        <span></span><span></span><span></span>
+                    </button>
                 </div>
                 <!-- Profile Button -->
                 <div class="header-right">
@@ -975,6 +978,13 @@
             loadNutrition();
             lucide.createIcons(); // Initialize initial icons
         });
+
+        // Mobile Navigation Toggle
+        function toggleMobileNav(btn) {
+            btn.classList.toggle('active');
+            const headerRight = btn.closest('.container').querySelector('.header-right');
+            if (headerRight) headerRight.classList.toggle('mobile-nav-open');
+        }
     </script>
     <!-- Minimal Footer -->
     <footer class="footer-minimal" style="background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.1); padding: var(--space-8) 0; margin-top: var(--space-20); text-align: center;">

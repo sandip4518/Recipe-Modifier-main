@@ -525,6 +525,9 @@
                     </h1>
                     <p>Complete your health profile</p>
                 </div>
+                <button class="mobile-menu-toggle" onclick="toggleMobileNav(this)" aria-label="Toggle navigation">
+                    <span></span><span></span><span></span>
+                </button>
             </div>
             <div class="header-right">
                 <a href="{{ url_for('community_board') }}" class="btn-glass">
@@ -822,6 +825,11 @@
 
         // Initialize Lucide icons
         lucide.createIcons();
+        function toggleMobileNav(btn) {
+            btn.classList.toggle('active');
+            const headerRight = btn.closest('.container').querySelector('.header-right');
+            if (headerRight) headerRight.classList.toggle('mobile-nav-open');
+        }
 
         // ---- BMR Auto-Calculation (Mifflin-St Jeor Equation) ----
         function calculateBMR() {
