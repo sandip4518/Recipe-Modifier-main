@@ -278,6 +278,24 @@
         </div>
     </div>
 
+    <!-- AI Auto-Fill Warning Modal -->
+    <div id="aiWarningModal" class="confirm-overlay" style="display: none;">
+        <div class="confirm-card" style="max-width: 400px; padding: 2rem;">
+            <div class="confirm-icon-wrap" style="margin-bottom: 1rem;">
+                <div class="confirm-icon-circle" style="background: linear-gradient(135deg, #eff6ff, #bfdbfe); color: #2563eb; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.25); animation: none; width: 56px; height: 56px; padding: 0; margin: 0 auto;">
+                    <i data-lucide="info" class="w-6 h-6"></i>
+                </div>
+            </div>
+            <h3 class="confirm-title" style="font-size: 1.25rem;">Recipe Name Required</h3>
+            <p class="confirm-subtitle" style="margin-bottom: 1.5rem;">Please type a recipe name in the input box before using AI Auto-Fill.</p>
+            <div class="confirm-buttons" style="display: flex; justify-content: center;">
+                <button type="button" class="confirm-btn confirm-btn-proceed" id="aiWarningOkBtn" style="background: var(--gradient-primary); box-shadow: 0 4px 12px rgba(0, 176, 176, 0.3); min-width: 120px;">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
     <style>
         .loading-overlay {
             position: fixed;
@@ -847,15 +865,39 @@
                 });
             }
 
+            // AI Auto-Fill Modal Logic
+            const aiWarningModal = document.getElementById('aiWarningModal');
+            const aiWarningOkBtn = document.getElementById('aiWarningOkBtn');
+            
+            if (aiWarningOkBtn) {
+                aiWarningOkBtn.addEventListener('click', function() {
+                    aiWarningModal.style.display = 'none';
+                    if (recipeInput) recipeInput.focus();
+                });
+            }
+
+            // Close modal on overlay click
+            if (aiWarningModal) {
+                aiWarningModal.addEventListener('click', function (e) {
+                    if (e.target === this) {
+                        this.style.display = 'none';
+                        if (recipeInput) recipeInput.focus();
+                    }
+                });
+            }
+
             // AI Auto-Fill
             if (aiFillButton) {
                 aiFillButton.addEventListener("click", async function () {
                     if (spellSuggestionsDiv) spellSuggestionsDiv.style.display = "none";
-                    const sourceText = (recipeInput && recipeInput.value.trim()) || ingredientsTextarea.value.trim();
-                    if (!sourceText) {
-                        (recipeInput || ingredientsTextarea).focus();
+                    const recipeNameText = recipeInput ? recipeInput.value.trim() : "";
+                    
+                    if (!recipeNameText) {
+                        if (aiWarningModal) aiWarningModal.style.display = 'flex';
                         return;
                     }
+                    
+                    const sourceText = recipeNameText;
 
                     aiFillButton.disabled = true;
                     const originalHtml = aiFillButton.innerHTML;
