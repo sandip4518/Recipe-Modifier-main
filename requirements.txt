@@ -18,5 +18,4 @@ Flask-Limiter==3.5.0
 bleach==6.1.0
 requests==2.31.0
 gunicorn==21.2.0
-sentence-transformers==2.2.2
-torch==2.2.1
+
