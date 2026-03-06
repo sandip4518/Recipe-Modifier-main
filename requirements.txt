@@ -18,4 +18,5 @@ Flask-Limiter==3.5.0
 bleach==6.1.0
 requests==2.31.0
 gunicorn==21.2.0
+google-generativeai==0.3.1
 

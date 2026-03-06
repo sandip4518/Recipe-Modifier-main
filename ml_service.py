@@ -317,7 +317,8 @@ Serve warm and enjoy your healthy meal!"""
         # 1. Try to find a match by recipe name if provided
         recipe_key = None
         if recipe_name:
-            recipe_key = self.predict_recipe(recipe_name)
+            # Increase threshold to 0.7 to ensure strict matching
+            recipe_key = self.predict_recipe(recipe_name, threshold=0.7)
         
         # 2. If no recipe name match, try matching by looking at ingredients (heuristic)
         if not recipe_key and original_ingredients:
@@ -328,7 +329,24 @@ Serve warm and enjoy your healthy meal!"""
         if recipe_key:
             return self.get_recipe_details(recipe_key, condition, user_profile)
             
-        # 3. Fallback: Generic instructions if no model match
+        # 3. Try Gemini Fallback if model doesn't know the recipe
+        try:
+            from gemini_service import gemini_service
+            if gemini_service.enabled:
+                logger.info(f"🔮 Using Gemini to generate recipe for: {recipe_name or 'Custom Recipe'}")
+                recipe = gemini_service.generate_recipe(
+                    condition, 
+                    original_ingredients, 
+                    modified_ingredients, 
+                    harmful_ingredients or [],
+                    user_profile=user_profile
+                )
+                if recipe:
+                    return recipe
+        except Exception as e:
+            logger.error(f"Error calling Gemini service: {e}")
+            
+        # 4. Fallback: Generic instructions if no model match and Gemini fails
         return self._fallback_recipe_generation(modified_ingredients, condition, user_profile)
 
     def _fallback_recipe_generation(self, ingredients, condition, user_profile=None):
@@ -354,7 +372,24 @@ Portion according to your dietary plan. Enjoy!"""
 
     def generate_health_tips(self, condition, ingredients):
         """Generate common health tips for a condition"""
-        # Static tips since we no longer have Gemini
+        # 1. Try Gemini first for personalized tips
+        try:
+            from gemini_service import gemini_service
+            if gemini_service.enabled:
+                logger.info(f"🔮 Using Gemini to generate health tips for: {condition}")
+                prompt = f"Generate 4-5 concise, evidence-based health tips for a person with {condition} who is cooking a recipe with these ingredients: {', '.join(ingredients)}. Format as a simple markdown list."
+                # We can add a method to gemini_service or just call model directly here.
+                # Since gemini_service is meant to encapsulate it, let's add a method there if we want, 
+                # but for now I'll just use a generic call if I add it to gemini_service.
+                
+                # Let's add it to GeminiService for consistency.
+                tips = gemini_service.generate_custom_content(prompt)
+                if tips:
+                    return tips
+        except Exception as e:
+            logger.error(f"Error calling Gemini for health tips: {e}")
+
+        # 2. Fallback: Static tips if Gemini is unavailable
         tips = {
             "diabetes": [
                 "Focus on low-glycemic index foods to manage blood sugar.",
@@ -381,13 +416,24 @@ Portion according to your dietary plan. Enjoy!"""
 
     def extract_ingredients(self, text_or_name):
         """Extract ingredients from a recipe name if it exists in our data"""
-        recipe_key = self.predict_recipe(text_or_name)
+        # Increase threshold to 0.7 to avoid irrelevant matches (like grapes -> sugarcane)
+        recipe_key = self.predict_recipe(text_or_name, threshold=0.7)
         if recipe_key and recipe_key in self.recipe_data:
             default_variant = self.recipe_data[recipe_key]["variants"].get("default")
             if default_variant:
                 return [ing["name"].lower() for ing in default_variant["ingredients"]]
         
-        # Fallback if no match
+        # Try Gemini Fallback
+        try:
+            from gemini_service import gemini_service
+            if gemini_service.enabled:
+                ai_ingredients = gemini_service.extract_ingredients(text_or_name)
+                if ai_ingredients:
+                    return ai_ingredients
+        except Exception as e:
+            logger.error(f"Error calling Gemini service for extraction: {e}")
+        
+        # Final Fallback if no match
         return [item.strip().lower() for item in text_or_name.split(',')]
 
 # Global instance

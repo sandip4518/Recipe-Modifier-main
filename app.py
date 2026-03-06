@@ -631,7 +631,7 @@ def render_section_content(section_type, content):
     else:
         return f'<p class="recipe-text">{" ".join(content)}</p>'
 
-def generate_recipe(original_ingredients, safe_ingredients, replacements, condition, recipe_name=None):
+def generate_recipe(original_ingredients, safe_ingredients, replacements, condition, recipe_name=None, user_profile=None):
     """Generate a modified recipe based on safe ingredients using Gemini API"""
     
     # Create modified ingredient list
@@ -652,7 +652,8 @@ def generate_recipe(original_ingredients, safe_ingredients, replacements, condit
         modified_ingredients, 
         condition, 
         harmful_ingredients,
-        recipe_name
+        recipe_name,
+        user_profile
     )
     
     return recipe
@@ -1175,19 +1176,29 @@ def check_ingredients_route():
     personalized_notes = ml_service.get_personalized_notes(user_profile)
 
     # Try to serve from cache first to avoid a slow LLM call
-    ingredients_key = ",".join(sorted([i.strip().lower() for i in modified_ingredients if i and i.strip()]))
+    ingredients_list = [i.strip().lower() for i in modified_ingredients if i and i.strip()]
+    ingredients_key = ",".join(sorted(ingredients_list))
+    
+    # Include recipe name in cache key for better accuracy
+    cache_key = f"{condition}:{recipe_name.lower().strip() if recipe_name else 'none'}:{ingredients_key}"
     try:
-        cached_doc = get_generated_recipes().find_one({"condition": condition, "ingredients_key": ingredients_key}, {"recipe": 1, "_id": 0})
+        cached_doc = get_generated_recipes().find_one({"cache_key": cache_key}, {"recipe": 1, "_id": 0})
         if cached_doc and cached_doc.get("recipe"):
             recipe = cached_doc["recipe"]
         else:
             # Generate modified recipe via ML Service
-            recipe = generate_recipe(ingredients, safe, replacements, condition, recipe_name)
+            recipe = generate_recipe(ingredients, safe, replacements, condition, recipe_name, user_profile)
             try:
-                # Cache the base recipe
+                # Cache the base recipe using the new combined key
                 get_generated_recipes().update_one(
-                    {"condition": condition, "ingredients_key": ingredients_key},
-                    {"$set": {"recipe": recipe, "updated_at": datetime.now()}},
+                    {"cache_key": cache_key},
+                    {"$set": {
+                        "condition": condition, 
+                        "ingredients_key": ingredients_key,
+                        "recipe_name": recipe_name,
+                        "recipe": recipe, 
+                        "updated_at": datetime.now()
+                    }},
                     upsert=True
                 )
             except Exception:
@@ -1196,7 +1207,7 @@ def check_ingredients_route():
     except Exception as e:
         print(f"Error checking cache: {e}")
         # Generate modified recipe via Gemini (or ML Service)
-        recipe = generate_recipe(ingredients, safe, replacements, condition, recipe_name)
+        recipe = generate_recipe(ingredients, safe, replacements, condition, recipe_name, user_profile)
     
     # Skip synchronous nutrition calculation - will be loaded via AJAX for faster initial page load
     # Pass modified ingredients to frontend for async nutrition loading

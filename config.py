@@ -46,4 +46,7 @@ class Config:
     
     # USDA Nutrition API Configuration
     USDA_API_KEY = os.environ.get('USDA_API_KEY') or ''
+    
+    # Gemini AI API Configuration
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY') or ''
 
