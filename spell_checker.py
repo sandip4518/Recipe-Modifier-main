@@ -92,8 +92,8 @@ class SpellChecker:
                 idx = self.recipes_lower.index(match)
                 suggestions.append(self.recipes[idx])
             
-            # Since we didn't get an exact match earlier, if there are no suggestions, it's definitely incorrect/unrecognized.
-            is_correct = False
+            # Check if top match is very close (>90% similar)
+            is_correct = len(suggestions) == 0
             if suggestions:
                 ratio = SequenceMatcher(None, text_lower, matches[0]).ratio()
                 is_correct = ratio > 0.9
