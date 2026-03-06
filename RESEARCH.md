@@ -400,6 +400,26 @@ Production (Render):
   Note: Persistent storage if using Render Disks, otherwise ephemeral
 ```
 
+### 4.6 Recipe Similarity Embedding Validation
+
+The system implements a semantic similarity validation layer using Sentence Transformers to verify recipe names.
+
+#### Algorithmic Approach
+1.  **Model**: `all-MiniLM-L6-v2` (Sentence Transformer)
+2.  **Dataset**: A curated database of ~360 realistic recipe names (`recipes.csv`) 
+3.  **Process**:
+    *   Pre-compute and cache 384-dimensional dense vector embeddings for all known recipe names.
+    *   Compute the input's semantic embedding in real-time.
+    *   Calculate the **Cosine Similarity** between the input and the database.
+4.  **Validation Logic**:
+    *   If `max_similarity_score > 0.45`, it's classified as a **Realistic Recipe Name**.
+    *   If `max_similarity_score <= 0.45`, it's classified as **Invalid/Gibberish** and rejected.
+
+#### Benefits
+-   **Semantic Understanding**: Recognizes synonyms and related culinary terms.
+-   **Gibberish Rejection**: Effectively filters random strings like "dvhdhvgdv".
+-   **Contextual Accuracy**: Ensures recipe generation receives meaningful context.
+
 ---
 
 ## 5. Tools, Technologies, and Dependencies

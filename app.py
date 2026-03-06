@@ -23,6 +23,7 @@ from models import UserManager
 from forms import RegistrationForm, LoginForm, ProfileUpdateForm, ChangePasswordForm, ProfileCompletionForm
 import requests
 from spell_checker import spell_checker
+from recipe_similarity import recipe_validator
 from nutrition_service import nutrition_service
 
 load_dotenv()
@@ -1112,6 +1113,18 @@ def api_profile_warnings():
     warnings = get_profile_warnings(ingredients, current_user)
     return jsonify({'warnings': warnings})
 
+@app.route('/api/validate-recipe', methods=['POST'])
+def api_validate_recipe():
+    """API endpoint to validate recipe name realism using embeddings"""
+    data = request.get_json(force=True, silent=True) or {}
+    recipe_name = data.get('recipe_name', '').strip()
+    
+    if not recipe_name or len(recipe_name) < 3:
+        return jsonify({'is_valid': False, 'error': 'Too short'})
+        
+    is_valid = recipe_validator.validate_recipe_name(recipe_name, threshold=0.45)
+    return jsonify({'is_valid': is_valid})
+
 @app.route('/check_ingredients', methods=['POST'])
 def check_ingredients_route():
     """Process ingredient submission and return results"""
@@ -1145,6 +1158,11 @@ def check_ingredients_route():
         if len(recipe_name) > 7 and not re.search(r'[aeiouyAEIOUY]', recipe_name) and ' ' not in recipe_name:
              flash("Recipe name seems invalid or random.", 'error')
              return redirect(url_for('index'))
+             
+        # Recipe Similarity Embedding Validation
+        if not recipe_validator.validate_recipe_name(recipe_name, threshold=0.45):
+            flash("The recipe name seems obscure or invalid. Please provide a real recipe name.", 'error')
+            return redirect(url_for('index'))
     
     # Validate ingredients input
     if not ingredients_text:

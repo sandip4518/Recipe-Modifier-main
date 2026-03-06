@@ -608,6 +608,17 @@
             font-weight: 500;
         }
 
+        .validation-error {
+            color: #ef4444;
+            font-size: 0.85rem !important;
+            margin-top: 0.5rem !important;
+            font-weight: 600 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.4rem !important;
+            animation: fadeIn 0.3s ease;
+        }
+
         /* Confirmation Modal Styles */
         .confirm-overlay {
             position: fixed;
@@ -1290,18 +1301,48 @@
             return null;
         }
 
-        function validateRecipeName(value) {
+        let recipeSimilarityTimeout = null;
+        async function validateRecipeName(value) {
             const errorDiv = document.getElementById('recipeNameError');
             const hintDiv = document.getElementById('recipeNameHint');
-            const error = getRecipeNameError(value);
+            const trimmed = value.trim();
+            const error = getRecipeNameError(trimmed);
             
-            if (error && value.trim().length > 0) {
+            // Clear previous timeout
+            if (recipeSimilarityTimeout) clearTimeout(recipeSimilarityTimeout);
+
+            if (error && trimmed.length > 0) {
                 errorDiv.textContent = error;
                 errorDiv.style.display = 'block';
                 if (hintDiv) hintDiv.style.display = 'none';
+                return;
             } else {
                 errorDiv.style.display = 'none';
                 if (hintDiv) hintDiv.style.display = 'block';
+            }
+
+            // If passes basic rules, check embedding similarity (debounced)
+            if (trimmed.length >= 3) {
+                recipeSimilarityTimeout = setTimeout(async () => {
+                    console.log("Checking similarity for:", trimmed);
+                    try {
+                        const resp = await fetch('/api/validate-recipe', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ recipe_name: trimmed })
+                        });
+                        const data = await resp.json();
+                        console.log("Similarity result:", data);
+                        
+                        if (!data.is_valid && trimmed === document.getElementById('recipeName').value.trim()) {
+                            errorDiv.textContent = "The recipe name seems obscure or invalid. Please provide a real recipe name.";
+                            errorDiv.style.display = 'flex'; // Changed to flex for alignment
+                            if (hintDiv) hintDiv.style.display = 'none';
+                        }
+                    } catch (e) {
+                        console.error("Similarity validation error:", e);
+                    }
+                }, 800);
             }
         }
     </script>
