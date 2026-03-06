@@ -1121,6 +1121,31 @@ def check_ingredients_route():
     condition = request.form.get('condition', '').strip()
     optimize_budget = request.form.get('optimize_budget') == 'on'
     
+    # Validate recipe name (if provided)
+    if recipe_name:
+        if len(recipe_name) < 3:
+            flash('Recipe name must be at least 3 characters long.', 'error')
+            return redirect(url_for('index'))
+        if len(recipe_name) > 80:
+            flash('Recipe name is too long. Please limit to 80 characters.', 'error')
+            return redirect(url_for('index'))
+        # Allowed characters: Letters, Numbers, Spaces, Hyphens, Apostrophes
+        if not re.match(r"^[A-Za-z0-9\s\-\']+$", recipe_name):
+            flash("Recipe name contains invalid characters. Use letters, numbers, spaces, hyphens, and apostrophes only.", 'error')
+            return redirect(url_for('index'))
+        # Must contain at least one letter
+        if not re.search(r'[A-Za-z]', recipe_name):
+            flash("Recipe name must contain at least one letter.", 'error')
+            return redirect(url_for('index'))
+        # Gibberish/repetition check
+        if re.search(r'(.)\1{3,}', recipe_name):
+            flash("Recipe name contains too many repeated characters.", 'error')
+            return redirect(url_for('index'))
+        # Gibberish: no vowels in long word without spaces
+        if len(recipe_name) > 7 and not re.search(r'[aeiouyAEIOUY]', recipe_name) and ' ' not in recipe_name:
+             flash("Recipe name seems invalid or random.", 'error')
+             return redirect(url_for('index'))
+    
     # Validate ingredients input
     if not ingredients_text:
         flash('Please enter at least one ingredient.', 'error')

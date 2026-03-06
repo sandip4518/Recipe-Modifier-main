@@ -105,12 +105,13 @@
                                 </label>
                                 <div class="input-group">
                                     <input type="text" class="form-input" id="recipeName" name="recipe_name"
-                                        placeholder="e.g., Banana Bread, Pancakes">
+                                        placeholder="e.g., Banana Bread, Pancakes" oninput="validateRecipeName(this.value)">
                                     <button type="button" class="btn-ai" id="aiFillIngredients">
                                         <i data-lucide="sparkles" class="inline-block w-4 h-4 mr-1"></i> AI Auto-Fill
                                     </button>
                                 </div>
-                                <div class="form-hint"><i data-lucide="lightbulb" class="inline-block w-3 h-3 mr-1"></i>
+                                <div id="recipeNameError" class="validation-error" style="display: none; color: #ef4444; font-size: 0.8rem; margin-top: 0.25rem; font-weight: 500;"></div>
+                                <div class="form-hint" id="recipeNameHint"><i data-lucide="lightbulb" class="inline-block w-3 h-3 mr-1"></i>
                                     Type a recipe name to auto-detect ingredients</div>
                                 <!-- Spell Check Suggestions -->
                                 <div id="spellSuggestions" class="spell-suggestion" style="display: none;">
@@ -1029,6 +1030,21 @@
                         return false;
                     }
 
+                    // Recipe Name Validation
+                    if (recipeInput) {
+                        const recipeName = recipeInput.value.trim();
+                        if (recipeName) {
+                            const error = getRecipeNameError(recipeName);
+                            if (error) {
+                                e.preventDefault();
+                                recipeInput.focus();
+                                showToast(error, 'warning');
+                                validateRecipeName(recipeName); // Show the error below input
+                                return false;
+                            }
+                        }
+                    }
+
                     // --- Check for active profile warnings ---
                     if (!warningConfirmed && warningsContainer && warningsContainer.style.display !== 'none') {
                         const activeWarnings = warningsContainer.querySelectorAll('.profile-warning-card');
@@ -1240,6 +1256,54 @@
                 }
             });
         });
+
+        // --- Recipe Name Validation Functions ---
+        function getRecipeNameError(name) {
+            if (!name) return null;
+            
+            const trimmed = name.trim();
+            if (trimmed.length < 3) return "Recipe name must be at least 3 characters long.";
+            if (trimmed.length > 80) return "Recipe name must be less than 80 characters.";
+            
+            // Allowed characters: Letters, Numbers, Spaces, Hyphen, Apostrophe
+            const allowedRegex = /^[A-Za-z0-9\s\-\']+$/;
+            if (!allowedRegex.test(trimmed)) {
+                return "Recipe name contains invalid characters. Use only letters, numbers, spaces, hyphens, and apostrophes.";
+            }
+            
+            // Must contain at least one letter
+            if (!/[A-Za-z]/.test(trimmed)) {
+                return "Recipe name must contain at least one letter.";
+            }
+            
+            // No repeated characters (4+ identical in a row)
+            if (/(.)\1{3,}/.test(trimmed)) {
+                return "Recipe name contains too many repeated characters.";
+            }
+            
+            // Gibberish check: if length > 7, must have at least one vowel
+            const hasVowel = /[aeiouyAEIOUY]/.test(trimmed);
+            if (trimmed.length > 7 && !hasVowel && !trimmed.includes(' ')) {
+                return "Recipe name seems invalid or random.";
+            }
+            
+            return null;
+        }
+
+        function validateRecipeName(value) {
+            const errorDiv = document.getElementById('recipeNameError');
+            const hintDiv = document.getElementById('recipeNameHint');
+            const error = getRecipeNameError(value);
+            
+            if (error && value.trim().length > 0) {
+                errorDiv.textContent = error;
+                errorDiv.style.display = 'block';
+                if (hintDiv) hintDiv.style.display = 'none';
+            } else {
+                errorDiv.style.display = 'none';
+                if (hintDiv) hintDiv.style.display = 'block';
+            }
+        }
     </script>
     <!-- Minimal Footer -->
     <footer class="footer-minimal" style="background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.1); padding: var(--space-8) 0; margin-top: var(--space-20); text-align: center;">
