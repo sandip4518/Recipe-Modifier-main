@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grocery List - HealthRecipeAI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/grocery.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -192,34 +193,7 @@
         
     </script>
     
-    <style>
-        .grocery-item.is-checked {
-            opacity: 0.7;
-            background: transparent !important;
-        }
-        .grocery-item.is-checked .item-name {
-            text-decoration: line-through;
-            color: var(--gray-400) !important;
-        }
-        .grocery-item:hover:not(.is-checked) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px -4px rgba(0,0,0,0.05);
-            border-color: var(--primary-200) !important;
-            background-color: white !important;
-        }
-        .remove-btn:hover i {
-            color: #ef4444 !important;
-        }
-        @media print {
-            .cookbook-header, .back-btn, .header-right {
-                display: none !important;
-            }
-            .grocery-page { background: white !important; }
-            .main-content { padding: 0 !important; }
-            .grocery-item { break-inside: avoid; border-bottom: 1px solid #ccc !important; }
-            .footer-minimal { display: none !important; }
-        }
-    </style>
+
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
     <!-- Minimal Footer -->

@@ -9,54 +9,12 @@
         content="Login to Health-Aware Recipe Modifier - Access your personalized recipe modifications.">
     <title>Login - HealthRecipeAI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        .password-input-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .password-input-wrapper .password-input {
-            padding-right: 3rem;
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 0.75rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #6b7280;
-            transition: color 0.2s ease;
-            border-radius: 6px;
-        }
-
-        .password-toggle:hover {
-            color: #00b0b0;
-            background: rgba(0, 176, 176, 0.05);
-        }
-
-        .password-toggle:focus {
-            outline: 2px solid rgba(0, 176, 176, 0.3);
-            outline-offset: 2px;
-        }
-
-        .eye-icon {
-            width: 20px;
-            height: 20px;
-        }
-    </style>
 </head>
 
 <body>

@@ -1,0 +1,57 @@
+/* Pantry Page specific styles */
+
+.pantry-tag {
+    background: var(--primary-50);
+    border: 1px solid var(--primary-100);
+    color: var(--primary-700);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.pantry-tag button {
+    background: none;
+    border: none;
+    color: var(--primary-400);
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+}
+
+.suggestion-card {
+    background: white;
+    padding: var(--space-4);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid var(--primary-500);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.progress-ring {
+    --match-pct: 0%;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: conic-gradient(var(--primary-500) var(--match-pct), var(--gray-100) 0deg);
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+.progress-ring span {
+    background: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

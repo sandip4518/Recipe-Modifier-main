@@ -1,0 +1,35 @@
+CSS REFACTORING PLAN: MODULARIZING STYLE.CSS
+===================================================
+
+Goal:
+Keep shared, reusable code in a `global.css` (or `style.css`) and extract page-specific CSS into their respective files (e.g., `index.css`, `landing.css`, `profile.css`) without breaking the UI.
+
+Approach:
+1. Keep the Foundation in Global CSS (`style.css`)
+   - CSS Variables (Design Tokens): Colors, typography, spacing, shadows.
+   - Base Styles & Resets: `*`, `html`, `body`, and typography settings.
+   - Global Components: Buttons (`.btn`), Navigation Bars (`.navbar`), Footers, Identical Icons (`.lucide-icon`), Flash Message Alerts (`.alert`).
+
+2. Extract Page-Specific Styles
+   - Identify CSS sections explicitly tied to specific pages in `style.css`.
+   - Create new files in `static/css/` (e.g., `landing.css`, `index.css`).
+   - Copy the specific blocks of CSS (like `.hero` section for the landing page) and move them into their new files.
+   - Remove these blocks from the global `style.css` to reduce its size.
+
+3. Update HTML Templates
+   - Open the individual HTML templates (e.g., `landing_page.html`, `index.html`).
+   - Add a `<link rel="stylesheet">` tag in the `<head>` for the new specific CSS file.
+   - Ensure the specific CSS file is loaded *after* `style.css` so that cascading behavior remains correct.
+   - Move inline `<style>` blocks (e.g., loading overlays in `index.html`) into their respective page CSS files.
+
+Example Workflow (Landing Page):
+- Step A: Create `static/css/landing.css`.
+- Step B: Move `.hero`, `.hero-bg`, `.hero-pattern` classes from `style.css` into `landing.css`.
+- Step C: Update `landing_page.html` head to look like:
+  ```html
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+  ```
+
+Outcome:
+A significantly smaller, maintainable `style.css` and scoped, organized CSS for each page, allowing for better code readability and caching.

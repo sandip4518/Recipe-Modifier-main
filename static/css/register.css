@@ -1,0 +1,161 @@
+/* Register Page specific styles */
+
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper .password-input {
+    padding-right: 3rem;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    transition: color 0.2s ease;
+    border-radius: 6px;
+}
+
+.password-toggle:hover {
+    color: #00b0b0;
+    background: rgba(0, 176, 176, 0.05);
+}
+
+.password-toggle:focus {
+    outline: 2px solid rgba(0, 176, 176, 0.3);
+    outline-offset: 2px;
+}
+
+.eye-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* ---- Two-Column Register Layout ---- */
+.register-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 2rem;
+    align-items: start;
+    width: 100%;
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+}
+
+.register-layout .auth-card {
+    width: 100%;
+}
+
+/* Right sidebar info cards */
+.register-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    position: sticky;
+    top: 2rem;
+}
+
+.register-sidebar .info-card {
+    background: white;
+    border-radius: var(--radius-2xl);
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    border: 1px solid var(--gray-100);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.register-sidebar .info-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+}
+
+.register-sidebar .info-card.warning {
+    border-left: 4px solid var(--warning);
+    background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+}
+
+.register-sidebar .info-card.info {
+    border-left: 4px solid var(--info);
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+}
+
+.register-sidebar .info-card.tips {
+    border-left: 4px solid var(--primary-500);
+    background: linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%);
+}
+
+.register-sidebar .info-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--gray-800);
+}
+
+.register-sidebar .info-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.register-sidebar .info-card ul li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0;
+    font-size: 0.8125rem;
+    color: var(--gray-600);
+    line-height: 1.4;
+}
+
+.register-sidebar .info-card ul li i {
+    flex-shrink: 0;
+}
+
+/* Mobile: collapse to single column */
+@media (max-width: 820px) {
+    .register-layout {
+        grid-template-columns: 1fr;
+        max-width: 560px;
+        padding: 2rem 1rem;
+    }
+
+    .register-sidebar {
+        position: static;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .register-sidebar .info-card {
+        flex: 1;
+        min-width: 250px;
+    }
+}
+
+@media (max-width: 560px) {
+    .register-sidebar {
+        flex-direction: column;
+    }
+
+    .register-sidebar .info-card {
+        min-width: 0;
+    }
+
+    .register-layout {
+        padding: 1rem;
+    }
+}

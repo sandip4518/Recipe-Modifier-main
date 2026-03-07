@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Pantry - HealthRecipeAI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pantry.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -68,9 +69,9 @@
                     <div class="pantry-items" id="pantry-items-container" style="display: flex; flex-wrap: wrap; gap: var(--space-2);">
                         {% if items %}
                             {% for item in items %}
-                            <div class="pantry-tag" style="background: var(--primary-50); border: 1px solid var(--primary-100); color: var(--primary-700); padding: var(--space-2) var(--space-3); border-radius: var(--radius-full); display: inline-flex; align-items: center; gap: var(--space-2); font-size: 0.9rem; font-weight: 500;">
+                            <div class="pantry-tag">
                                 <span>{{ item }}</span>
-                                <button onclick="removeItem('{{ item }}', this)" style="background: none; border: none; color: var(--primary-400); cursor: pointer; padding: 0; display: flex;">
+                                <button onclick="removeItem('{{ item }}', this)">
                                     <i data-lucide="x" class="w-4 h-4 hover:text-danger hover:scale-110 transition-transform"></i>
                                 </button>
                             </div>
@@ -88,7 +89,7 @@
                     {% if suggestions %}
                         <div style="display: flex; flex-direction: column; gap: var(--space-4);">
                         {% for sug in suggestions %}
-                            <div class="suggestion-card" style="background: white; padding: var(--space-4); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); border-left: 4px solid var(--primary-500); display: flex; justify-content: space-between; align-items: center;">
+                            <div class="suggestion-card">
                                 <div>
                                     <h3 style="margin: 0; margin-bottom: 0.25rem;">{{ sug.recipe_name }}</h3>
                                     <p style="margin: 0; font-size: 0.85rem; color: var(--gray-500);">
@@ -96,8 +97,8 @@
                                     </p>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: var(--space-4);">
-                                    <div class="progress-ring" style="--match-pct: {{ sug.match_pct }}%; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: conic-gradient(var(--primary-500) var(--match-pct), var(--gray-100) 0deg); font-weight: bold; font-size: 0.8rem;">
-                                        <span style="background: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">{{ sug.match_pct }}%</span>
+                                    <div class="progress-ring" style="--match-pct: {{ sug.match_pct }}%;">
+                                        <span>{{ sug.match_pct }}%</span>
                                     </div>
                                     <button class="btn btn-secondary btn-sm" onclick="showToast('Cookbook details feature coming soon!', 'info')" style="padding: var(--space-2); border-radius: var(--radius-md);">
                                         <i data-lucide="arrow-right" class="w-4 h-4"></i>

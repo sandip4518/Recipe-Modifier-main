@@ -1,0 +1,32 @@
+/* Grocery Page specific styles */
+
+.grocery-item.is-checked {
+    opacity: 0.7;
+    background: transparent !important;
+}
+
+.grocery-item.is-checked .item-name {
+    text-decoration: line-through;
+    color: var(--gray-400) !important;
+}
+
+.grocery-item:hover:not(.is-checked) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -4px rgba(0,0,0,0.05);
+    border-color: var(--primary-200) !important;
+    background-color: white !important;
+}
+
+.remove-btn:hover i {
+    color: #ef4444 !important;
+}
+
+@media print {
+    .cookbook-header, .back-btn, .header-right {
+        display: none !important;
+    }
+    .grocery-page { background: white !important; }
+    .main-content { padding: 0 !important; }
+    .grocery-item { break-inside: avoid; border-bottom: 1px solid #ccc !important; }
+    .footer-minimal { display: none !important; }
+}
