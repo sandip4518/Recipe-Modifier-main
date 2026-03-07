@@ -446,7 +446,7 @@ button {
     align-items: center;
     gap: var(--space-2);
     font-weight: 700;
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 5vw, 1.5rem);
 }
 
 .logo-icon {
@@ -810,7 +810,7 @@ button {
 }
 
 .hero-title {
-    font-size: clamp(2.5rem, 5vw, 3.75rem);
+    font-size: clamp(2rem, 8vw, 3.75rem);
     font-weight: 800;
     line-height: 1.1;
     color: var(--gray-900);
@@ -826,7 +826,7 @@ button {
 }
 
 .hero-subtitle {
-    font-size: 1.25rem;
+    font-size: clamp(1rem, 4.5vw, 1.25rem);
     color: var(--gray-600);
     margin-bottom: var(--space-8);
     line-height: 1.7;
@@ -840,9 +840,15 @@ button {
     animation: fadeInUp 0.6s ease-out 0.3s both;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
     .hero-buttons {
         flex-direction: column;
+        width: 100%;
+    }
+    
+    .hero-buttons .btn {
+        width: 100%;
+        justify-content: center;
     }
 }
 
@@ -858,10 +864,11 @@ button {
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 500px) {
     .hero-stats {
         flex-wrap: wrap;
-        gap: var(--space-6);
+        gap: var(--space-4);
+        justify-content: center;
     }
 }
 
@@ -871,14 +878,15 @@ button {
 }
 
 .stat-number {
-    font-size: 2rem;
+    font-size: clamp(1.5rem, 6vw, 2rem);
     font-weight: 800;
     color: var(--primary-600);
 }
 
 .stat-label {
-    font-size: 0.875rem;
+    font-size: clamp(0.75rem, 3vw, 0.875rem);
     color: var(--gray-500);
+    white-space: nowrap;
 }
 
 .stat-loading {
