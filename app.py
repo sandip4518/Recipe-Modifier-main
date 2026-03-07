@@ -2028,28 +2028,6 @@ def update_category(entry_id):
         print(f"Error updating category: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/cook/<entry_id>')
-@login_required
-def cooking_mode(entry_id):
-    """Immersive cooking mode for a specific recipe"""
-    try:
-        entry = get_food_entries().find_one({
-            "_id": ObjectId(entry_id),
-            "patient_id": current_user.user_id
-        })
-        if not entry:
-            flash("Recipe not found.", "error")
-            return redirect(url_for('cookbook'))
-            
-        # Parse recipe text into ingredients and structured steps
-        recipe_text = entry.get('recipe', '')
-        
-        return render_template('cook.html', recipe=entry)
-    except Exception as e:
-        print(f"Error loading cooking mode: {e}")
-        flash("Error loading cooking mode.", "error")
-        return redirect(url_for('cookbook'))
-
 @app.route('/api/cookbook/export', methods=['GET', 'POST'])
 @login_required
 def export_cookbook():

@@ -1,686 +1,995 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Your Personal Cookbook - Your curated collection of healthy, safe recipes.">
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='favicon.png') }}"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Your Personal Cookbook - Your curated collection of healthy, safe recipes."
+    />
     <title>My Cookbook - HealthRecipeAI</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/cookbook.css') }}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/cookbook.css') }}"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://unpkg.com/lucide@latest"></script>
-</head>
+  </head>
 
-<body>
+  <body>
     <div class="cookbook-page">
-        <!-- Header -->
-        <header class="cookbook-header">
-            <div class="container">
-                <div class="header-left">
-                    <a href="{{ url_for('index') }}" class="btn-glass back-btn" style="margin-right: 1rem;">
-                        <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back to App
-                    </a>
-                    <a href="{{ url_for('index') }}" class="logo-link" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem;">
-                        <i data-lucide="salad" class="w-8 h-8 text-primary"></i>
-                        <div class="header-title">
-                            <h1 style="font-size: 1.25rem; font-weight: 800; margin: 0; line-height: 1;">HealthRecipeAI</h1>
-                            <p style="font-size: 0.75rem; margin: 0; opacity: 0.8;">Eat smart. Cook safe.</p>
-                        </div>
-                    </a>
-                    <button class="mobile-menu-toggle" onclick="toggleMobileNav(this)" aria-label="Toggle navigation">
-                        <span></span><span></span><span></span>
-                    </button>
-                </div>
-                <div class="header-right">
-                    <a href="{{ url_for('community_board') }}" class="btn-glass">
-                        <i data-lucide="globe" class="w-4 h-4 mr-2"></i> Community
-                    </a>
-                    <a href="{{ url_for('pantry') }}" class="btn-glass">
-                        <i data-lucide="layout-grid" class="w-4 h-4 mr-2"></i> Pantry
-                    </a>
-                    <a href="{{ url_for('planner') }}" class="btn-glass">
-                        <i data-lucide="calendar" class="w-4 h-4 mr-2"></i> Meal Planner
-                    </a>
-                    {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('profile') }}" class="btn-glass profile-link">
-                        <i data-lucide="user" class="w-4 h-4 mr-2"></i>
-                        <span>{{ current_user.username }}</span>
-                    </a>
-                    <a href="{{ url_for('logout') }}" class="btn-glass logout-btn" title="Logout">
-                        <i data-lucide="log-out" class="w-4 h-4"></i>
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <div class="container">
-                
-                <!-- Filter Bar -->
-                <div class="filter-bar">
-                    <div class="search-box">
-                        <i data-lucide="search" class="search-icon"></i>
-                        <input type="text" id="recipeSearch" placeholder="Search saved recipes...">
-                    </div>
-                    <div class="filter-group">
-                        <label for="categoryFilter"><i data-lucide="filter" class="w-4 h-4"></i></label>
-                        <select id="categoryFilter" class="filter-select">
-                            <option value="all">All Categories</option>
-                            {% for category in categories %}
-                            <option value="{{ category }}">{{ category }}</option>
-                            {% endfor %}
-                        </select>
-                        <button class="btn btn-primary ml-2" onclick="openExportModal()" style="display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
-                            <i data-lucide="download" class="w-4 h-4"></i> Export PDF
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Recipe Grid -->
-                <div class="recipe-grid" id="recipeGrid">
-                    {% if entries %}
-                        {% for entry in entries %}
-                        <div class="recipe-card" data-category="{{ entry.get('category', 'General') }}" data-name="{{ entry.recipe_name if entry.recipe_name else 'Custom Recipe' }}">
-                            <div class="recipe-card-header">
-                                <span class="category-badge">{{ entry.get('category', 'General') }}</span>
-                                <button class="fav-btn active" onclick="toggleFavorite('{{ entry._id }}', this)">
-                                    <i data-lucide="heart" class="w-5 h-5 fill-current"></i>
-                                </button>
-                            </div>
-                            <div class="recipe-card-body">
-                                <h3 class="recipe-title">{{ entry.recipe_name if entry.recipe_name else 'Custom Recipe' }}</h3>
-                                <div class="recipe-meta">
-                                    <span class="meta-item"><i data-lucide="calendar" class="w-3 h-3"></i> {{ entry.timestamp.strftime('%b %d, %Y') }}</span>
-                                    <span class="meta-item"><i data-lucide="shield-check" class="w-3 h-3 text-success"></i> {{ entry.safe|length }} safe</span>
-                                </div>
-                                <div class="recipe-ingredients-preview">
-                                    {{ entry.input_ingredients[:3]|join(', ') }}{% if entry.input_ingredients|length > 3 %}...{% endif %}
-                                </div>
-                            </div>
-                            <div class="recipe-card-footer">
-                                <button class="view-recipe-btn" onclick="openRecipeModal('{{ entry._id }}')">
-                                    View Full Recipe <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                                </button>
-                                <div class="recipe-data" id="data-{{ entry._id }}" style="display: none;">
-                                    {{ entry.recipe }}
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                    <div class="empty-cookbook">
-                        <div class="empty-icon"><i data-lucide="book-open" class="w-16 h-16"></i></div>
-                        <h2>Your Cookbook is Empty</h2>
-                        <p>Star recipes from your results page to build your personal healthy cookbook.</p>
-                        <a href="{{ url_for('index') }}" class="btn btn-primary" style="text-decoration: none;">
-                            <i data-lucide="compass" class="w-4 h-4"></i> Start Exploring
-                        </a>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </main>
-
-        <!-- Recipe Modal -->
-        <div id="recipeModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 id="modalTitle">Recipe Details</h2>
-                    <button class="close-modal" onclick="closeRecipeModal()">&times;</button>
-                </div>
-                <div class="modal-body" id="modalBody">
-                    <!-- Recipe content will be injected here -->
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeRecipeModal()">Close</button>
-                    <a id="cookingModeBtn" class="btn btn-secondary" href="#" style="text-decoration: none;">
-                        <i data-lucide="chef-hat" class="w-4 h-4 mr-2"></i> Cooking Mode
-                    </a>
-                    <button class="btn btn-primary" id="modalShareBtn" onclick="toggleShare()">
-                        <i data-lucide="globe" class="w-4 h-4 mr-2"></i> <span id="shareBtnText">Share Publicly</span>
-                    </button>
-                    <button class="btn btn-primary" id="modalCategoryBtn">
-                        <i data-lucide="tag" class="w-4 h-4 mr-2"></i> Change Category
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Category Edit Modal -->
-        <div id="categoryModal" class="modal">
-            <div class="modal-content small-modal">
-                <div class="modal-header">
-                    <h2>Edit Category</h2>
-                    <button class="close-modal" onclick="closeCategoryModal()">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p class="input-label">Move this recipe to a different category:</p>
-                    <div class="category-input-wrapper">
-                        <input type="text" id="newCategoryInput" placeholder="Enter category name..." class="custom-input">
-                        <div class="suggestions" id="categorySuggestions">
-                            <!-- Predefined suggestions -->
-                            <span class="suggestion-chip">Weekday Dinners</span>
-                            <span class="suggestion-chip">Kids' Favorites</span>
-                            <span class="suggestion-chip">Holiday Specials</span>
-                            <span class="suggestion-chip">Breakfast</span>
-                            <span class="suggestion-chip">Quick Snacks</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeCategoryModal()">Cancel</button>
-                    <button class="btn btn-primary" onclick="saveNewCategory()">Save Changes</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Export Modal -->
-        <div id="exportModal" class="modal">
-            <div class="modal-content small-modal">
-                <div class="modal-header">
-                    <h2><i data-lucide="printer" class="inline-block w-5 h-5 mr-2"></i>Export Cookbook</h2>
-                    <button class="close-modal" onclick="closeExportModal()">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <form action="{{ url_for('export_cookbook') }}" method="POST" id="exportForm">
-                        <p class="input-label" style="margin-bottom: var(--space-2);">Cookbook Title (Optional):</p>
-                        <input type="text" name="title" placeholder="e.g. My Healthy Dinners" class="custom-input" style="width: 100%; margin-bottom: var(--space-4);">
-                        
-                        <p class="input-label" style="margin-bottom: var(--space-2);">Category to Export:</p>
-                        <select name="category" class="filter-select" style="width: 100%; margin-bottom: var(--space-4);" id="exportCategorySelect">
-                            <option value="all">All Categories</option>
-                            {% for category in categories %}
-                            <option value="{{ category }}">{{ category }}</option>
-                            {% endfor %}
-                        </select>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeExportModal()">Cancel</button>
-                    <button class="btn btn-primary" onclick="submitExportForm()">Generate PDF</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Empty Warning Modal -->
-        <div id="emptyWarningModal" class="modal">
-            <div class="modal-content small-modal" style="text-align: center; padding: var(--space-10); max-width: 450px;">
-                <div style="background: rgba(245, 158, 11, 0.1); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-6);">
-                    <i data-lucide="alert-triangle" class="w-10 h-10 text-warning"></i>
-                </div>
-                <h2 style="margin-bottom: var(--space-4); font-weight: 800; color: var(--gray-800);">Cookbook is Empty</h2>
-                <p style="color: var(--gray-600); margin-bottom: var(--space-8); line-height: 1.6;">
-                    You need to save some recipes to your cookbook before you can export them. Start by checking and starring your favorite healthy recipes!
+      <!-- Header -->
+      <header class="cookbook-header">
+        <div class="container">
+          <div class="header-left">
+            <a
+              href="{{ url_for('index') }}"
+              class="btn-glass back-btn"
+              style="margin-right: 1rem"
+            >
+              <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back to App
+            </a>
+            <a
+              href="{{ url_for('index') }}"
+              class="logo-link"
+              style="
+                text-decoration: none;
+                color: inherit;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+              "
+            >
+              <i data-lucide="salad" class="w-8 h-8 text-primary"></i>
+              <div class="header-title">
+                <h1
+                  style="
+                    font-size: 1.25rem;
+                    font-weight: 800;
+                    margin: 0;
+                    line-height: 1;
+                  "
+                >
+                  HealthRecipeAI
+                </h1>
+                <p style="font-size: 0.75rem; margin: 0; opacity: 0.8">
+                  Eat smart. Cook safe.
                 </p>
-                <div style="display: flex; flex-direction: column; gap: var(--space-3);">
-                    <a href="{{ url_for('index') }}" class="btn btn-primary" style="text-decoration: none; width: 100%;">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Go to Recipe Checker
-                    </a>
-                    <button class="btn btn-secondary" onclick="closeEmptyWarningModal()" style="width: 100%;">
-                        Stay Here
-                    </button>
-                </div>
-            </div>
+              </div>
+            </a>
+            <button
+              class="mobile-menu-toggle"
+              onclick="toggleMobileNav(this)"
+              aria-label="Toggle navigation"
+            >
+              <span></span><span></span><span></span>
+            </button>
+          </div>
+          <div class="header-right">
+            <a href="{{ url_for('community_board') }}" class="btn-glass">
+              <i data-lucide="globe" class="w-4 h-4 mr-2"></i> Community
+            </a>
+            <a href="{{ url_for('pantry') }}" class="btn-glass">
+              <i data-lucide="layout-grid" class="w-4 h-4 mr-2"></i> Pantry
+            </a>
+            <a href="{{ url_for('planner') }}" class="btn-glass">
+              <i data-lucide="calendar" class="w-4 h-4 mr-2"></i> Meal Planner
+            </a>
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('profile') }}" class="btn-glass profile-link">
+              <i data-lucide="user" class="w-4 h-4 mr-2"></i>
+              <span>{{ current_user.username }}</span>
+            </a>
+            <a
+              href="{{ url_for('logout') }}"
+              class="btn-glass logout-btn"
+              title="Logout"
+            >
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+            </a>
+            {% endif %}
+          </div>
         </div>
+      </header>
 
-        <footer class="cookbook-footer">
-            <p><i data-lucide="heart" class="inline-block w-4 h-4 text-red-500"></i> Built for your healthy lifestyle</p>
-        </footer>
+      <!-- Main Content -->
+      <main class="main-content">
+        <div class="container">
+          <!-- Filter Bar -->
+          <div class="filter-bar">
+            <div class="search-box">
+              <i data-lucide="search" class="search-icon"></i>
+              <input
+                type="text"
+                id="recipeSearch"
+                placeholder="Search saved recipes..."
+              />
+            </div>
+            <div class="filter-group">
+              <label for="categoryFilter"
+                ><i data-lucide="filter" class="w-4 h-4"></i
+              ></label>
+              <select id="categoryFilter" class="filter-select">
+                <option value="all">All Categories</option>
+                {% for category in categories %}
+                <option value="{{ category }}">{{ category }}</option>
+                {% endfor %}
+              </select>
+              <button
+                class="btn btn-primary ml-2"
+                onclick="openExportModal()"
+                style="
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 0.5rem;
+                  white-space: nowrap;
+                "
+              >
+                <i data-lucide="download" class="w-4 h-4"></i> Export PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- Recipe Grid -->
+          <div class="recipe-grid" id="recipeGrid">
+            {% if entries %} {% for entry in entries %}
+            <div
+              class="recipe-card"
+              data-category="{{ entry.get('category', 'General') }}"
+              data-name="{{ entry.recipe_name if entry.recipe_name else 'Custom Recipe' }}"
+            >
+              <div class="recipe-card-header">
+                <span class="category-badge"
+                  >{{ entry.get('category', 'General') }}</span
+                >
+                <button
+                  class="fav-btn active"
+                  onclick="toggleFavorite('{{ entry._id }}', this)"
+                >
+                  <i data-lucide="heart" class="w-5 h-5 fill-current"></i>
+                </button>
+              </div>
+              <div class="recipe-card-body">
+                <h3 class="recipe-title">
+                  {{ entry.recipe_name if entry.recipe_name else 'Custom Recipe'
+                  }}
+                </h3>
+                <div class="recipe-meta">
+                  <span class="meta-item"
+                    ><i data-lucide="calendar" class="w-3 h-3"></i> {{
+                    entry.timestamp.strftime('%b %d, %Y') }}</span
+                  >
+                  <span class="meta-item"
+                    ><i
+                      data-lucide="shield-check"
+                      class="w-3 h-3 text-success"
+                    ></i>
+                    {{ entry.safe|length }} safe</span
+                  >
+                </div>
+                <div class="recipe-ingredients-preview">
+                  {{ entry.input_ingredients[:3]|join(', ') }}{% if
+                  entry.input_ingredients|length > 3 %}...{% endif %}
+                </div>
+              </div>
+              <div class="recipe-card-footer">
+                <button
+                  class="view-recipe-btn"
+                  onclick="openRecipeModal('{{ entry._id }}')"
+                >
+                  View Full Recipe
+                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+                <div
+                  class="recipe-data"
+                  id="data-{{ entry._id }}"
+                  style="display: none"
+                >
+                  {{ entry.recipe }}
+                </div>
+              </div>
+            </div>
+            {% endfor %} {% else %}
+            <div class="empty-cookbook">
+              <div class="empty-icon">
+                <i data-lucide="book-open" class="w-16 h-16"></i>
+              </div>
+              <h2>Your Cookbook is Empty</h2>
+              <p>
+                Star recipes from your results page to build your personal
+                healthy cookbook.
+              </p>
+              <a
+                href="{{ url_for('index') }}"
+                class="btn btn-primary"
+                style="text-decoration: none"
+              >
+                <i data-lucide="compass" class="w-4 h-4"></i> Start Exploring
+              </a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </main>
+
+      <!-- Recipe Modal -->
+      <div id="recipeModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 id="modalTitle">Recipe Details</h2>
+            <button class="close-modal" onclick="closeRecipeModal()">
+              &times;
+            </button>
+          </div>
+          <div class="modal-body" id="modalBody">
+            <!-- Recipe content will be injected here -->
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeRecipeModal()">
+              Close
+            </button>
+            <button
+              class="btn btn-primary"
+              id="modalShareBtn"
+              onclick="toggleShare()"
+            >
+              <i data-lucide="globe" class="w-4 h-4 mr-2"></i>
+              <span id="shareBtnText">Share Publicly</span>
+            </button>
+            <button class="btn btn-primary" id="modalCategoryBtn">
+              <i data-lucide="tag" class="w-4 h-4 mr-2"></i> Change Category
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category Edit Modal -->
+      <div id="categoryModal" class="modal">
+        <div class="modal-content small-modal">
+          <div class="modal-header">
+            <h2>Edit Category</h2>
+            <button class="close-modal" onclick="closeCategoryModal()">
+              &times;
+            </button>
+          </div>
+          <div class="modal-body">
+            <p class="input-label">Move this recipe to a different category:</p>
+            <div class="category-input-wrapper">
+              <input
+                type="text"
+                id="newCategoryInput"
+                placeholder="Enter category name..."
+                class="custom-input"
+              />
+              <div class="suggestions" id="categorySuggestions">
+                <!-- Predefined suggestions -->
+                <span class="suggestion-chip">Weekday Dinners</span>
+                <span class="suggestion-chip">Kids' Favorites</span>
+                <span class="suggestion-chip">Holiday Specials</span>
+                <span class="suggestion-chip">Breakfast</span>
+                <span class="suggestion-chip">Quick Snacks</span>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeCategoryModal()">
+              Cancel
+            </button>
+            <button class="btn btn-primary" onclick="saveNewCategory()">
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Export Modal -->
+      <div id="exportModal" class="modal">
+        <div class="modal-content small-modal">
+          <div class="modal-header">
+            <h2>
+              <i data-lucide="printer" class="inline-block w-5 h-5 mr-2"></i
+              >Export Cookbook
+            </h2>
+            <button class="close-modal" onclick="closeExportModal()">
+              &times;
+            </button>
+          </div>
+          <div class="modal-body">
+            <form
+              action="{{ url_for('export_cookbook') }}"
+              method="POST"
+              id="exportForm"
+            >
+              <p class="input-label" style="margin-bottom: var(--space-2)">
+                Cookbook Title (Optional):
+              </p>
+              <input
+                type="text"
+                name="title"
+                placeholder="e.g. My Healthy Dinners"
+                class="custom-input"
+                style="width: 100%; margin-bottom: var(--space-4)"
+              />
+
+              <p class="input-label" style="margin-bottom: var(--space-2)">
+                Category to Export:
+              </p>
+              <select
+                name="category"
+                class="filter-select"
+                style="width: 100%; margin-bottom: var(--space-4)"
+                id="exportCategorySelect"
+              >
+                <option value="all">All Categories</option>
+                {% for category in categories %}
+                <option value="{{ category }}">{{ category }}</option>
+                {% endfor %}
+              </select>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeExportModal()">
+              Cancel
+            </button>
+            <button class="btn btn-primary" onclick="submitExportForm()">
+              Generate PDF
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty Warning Modal -->
+      <div id="emptyWarningModal" class="modal">
+        <div
+          class="modal-content small-modal"
+          style="text-align: center; padding: var(--space-10); max-width: 450px"
+        >
+          <div
+            style="
+              background: rgba(245, 158, 11, 0.1);
+              width: 80px;
+              height: 80px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin: 0 auto var(--space-6);
+            "
+          >
+            <i data-lucide="alert-triangle" class="w-10 h-10 text-warning"></i>
+          </div>
+          <h2
+            style="
+              margin-bottom: var(--space-4);
+              font-weight: 800;
+              color: var(--gray-800);
+            "
+          >
+            Cookbook is Empty
+          </h2>
+          <p
+            style="
+              color: var(--gray-600);
+              margin-bottom: var(--space-8);
+              line-height: 1.6;
+            "
+          >
+            You need to save some recipes to your cookbook before you can export
+            them. Start by checking and starring your favorite healthy recipes!
+          </p>
+          <div
+            style="display: flex; flex-direction: column; gap: var(--space-3)"
+          >
+            <a
+              href="{{ url_for('index') }}"
+              class="btn btn-primary"
+              style="text-decoration: none; width: 100%"
+            >
+              <i data-lucide="plus-circle" class="w-4 h-4"></i> Go to Recipe
+              Checker
+            </a>
+            <button
+              class="btn btn-secondary"
+              onclick="closeEmptyWarningModal()"
+              style="width: 100%"
+            >
+              Stay Here
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <footer class="cookbook-footer">
+        <p>
+          <i data-lucide="heart" class="inline-block w-4 h-4 text-red-500"></i>
+          Built for your healthy lifestyle
+        </p>
+      </footer>
     </div>
 
     <script>
-        // Initialize Lucide icons
-        lucide.createIcons();
-        function toggleMobileNav(btn) {
-            btn.classList.toggle('active');
-            const headerRight = btn.closest('.container').querySelector('.header-right');
-            if (headerRight) headerRight.classList.toggle('mobile-nav-open');
-        }
+      // Initialize Lucide icons
+      lucide.createIcons();
+      function toggleMobileNav(btn) {
+        btn.classList.toggle("active");
+        const headerRight = btn
+          .closest(".container")
+          .querySelector(".header-right");
+        if (headerRight) headerRight.classList.toggle("mobile-nav-open");
+      }
 
-        // Search and Filter Logic
-        const searchInput = document.getElementById('recipeSearch');
-        const categoryFilter = document.getElementById('categoryFilter');
-        const cards = document.querySelectorAll('.recipe-card');
+      // Search and Filter Logic
+      const searchInput = document.getElementById("recipeSearch");
+      const categoryFilter = document.getElementById("categoryFilter");
+      const cards = document.querySelectorAll(".recipe-card");
 
-        function filterRecipes() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const selectedCategory = categoryFilter.value;
+      function filterRecipes() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedCategory = categoryFilter.value;
 
-            cards.forEach(card => {
-                const name = card.dataset.name.toLowerCase();
-                const category = card.dataset.category;
-                
-                const matchesSearch = name.includes(searchTerm);
-                const matchesCategory = selectedCategory === 'all' || category === selectedCategory;
+        cards.forEach((card) => {
+          const name = card.dataset.name.toLowerCase();
+          const category = card.dataset.category;
 
-                if (matchesSearch && matchesCategory) {
-                    card.style.display = 'flex';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        }
+          const matchesSearch = name.includes(searchTerm);
+          const matchesCategory =
+            selectedCategory === "all" || category === selectedCategory;
 
-        if (searchInput) searchInput.addEventListener('input', filterRecipes);
-        if (categoryFilter) categoryFilter.addEventListener('change', filterRecipes);
+          if (matchesSearch && matchesCategory) {
+            card.style.display = "flex";
+          } else {
+            card.style.display = "none";
+          }
+        });
+      }
 
-        // Toggle Favorite
-        async function toggleFavorite(entryId, btn) {
-            try {
-                const response = await fetch(`/api/favorite/${entryId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    if (data.is_favorite) {
-                        btn.classList.add('active');
-                        btn.querySelector('i').classList.add('fill-current');
-                    } else {
-                        btn.classList.remove('active');
-                        btn.querySelector('i').classList.remove('fill-current');
-                        // Optionally remove from view if in cookbook page
-                        if (window.location.pathname.includes('cookbook')) {
-                            const card = btn.closest('.recipe-card');
-                            card.style.opacity = '0';
-                            card.style.transform = 'scale(0.9)';
-                            setTimeout(() => card.remove(), 300);
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Error toggling favorite:', error);
-            }
-        }
+      if (searchInput) searchInput.addEventListener("input", filterRecipes);
+      if (categoryFilter)
+        categoryFilter.addEventListener("change", filterRecipes);
 
-        // Modal Logic
-        const modal = document.getElementById('recipeModal');
-        const catModal = document.getElementById('categoryModal');
-        let currentEntryId = null;
-        
-        function openRecipeModal(entryId) {
-            currentEntryId = entryId;
-            const card = document.querySelector(`.recipe-card button[onclick*="${entryId}"]`).closest('.recipe-card');
-            const title = card.querySelector('.recipe-title').innerText;
-            const content = document.getElementById(`data-${entryId}`).innerHTML;
-            
-            document.getElementById('modalTitle').innerText = title;
-            document.getElementById('modalBody').innerHTML = formatRecipe(content);
-            document.getElementById('cookingModeBtn').href = `/cook/${entryId}`;
-            
-            // Check if it's already public
-            const isPublic = card.dataset.public === 'true';
-            const shareBtn = document.getElementById('modalShareBtn');
-            const shareBtnText = document.getElementById('shareBtnText');
-            if (isPublic) {
-                shareBtn.classList.remove('btn-primary');
-                shareBtn.classList.add('btn-secondary');
-                shareBtnText.innerText = 'Shared (Make Private)';
+      // Toggle Favorite
+      async function toggleFavorite(entryId, btn) {
+        try {
+          const response = await fetch(`/api/favorite/${entryId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            if (data.is_favorite) {
+              btn.classList.add("active");
+              btn.querySelector("i").classList.add("fill-current");
             } else {
-                shareBtn.classList.remove('btn-secondary');
-                shareBtn.classList.add('btn-primary');
-                shareBtnText.innerText = 'Share Publicly';
+              btn.classList.remove("active");
+              btn.querySelector("i").classList.remove("fill-current");
+              // Optionally remove from view if in cookbook page
+              if (window.location.pathname.includes("cookbook")) {
+                const card = btn.closest(".recipe-card");
+                card.style.opacity = "0";
+                card.style.transform = "scale(0.9)";
+                setTimeout(() => card.remove(), 300);
+              }
             }
-            
-            modal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-            
-            lucide.createIcons();
+          }
+        } catch (error) {
+          console.error("Error toggling favorite:", error);
+        }
+      }
+
+      // Modal Logic
+      const modal = document.getElementById("recipeModal");
+      const catModal = document.getElementById("categoryModal");
+      let currentEntryId = null;
+
+      function openRecipeModal(entryId) {
+        currentEntryId = entryId;
+        const card = document
+          .querySelector(`.recipe-card button[onclick*="${entryId}"]`)
+          .closest(".recipe-card");
+        const title = card.querySelector(".recipe-title").innerText;
+        const content = document.getElementById(`data-${entryId}`).innerHTML;
+
+        document.getElementById("modalTitle").innerText = title;
+        document.getElementById("modalBody").innerHTML = formatRecipe(content);
+
+        // Check if it's already public
+        const isPublic = card.dataset.public === "true";
+        const shareBtn = document.getElementById("modalShareBtn");
+        const shareBtnText = document.getElementById("shareBtnText");
+        if (isPublic) {
+          shareBtn.classList.remove("btn-primary");
+          shareBtn.classList.add("btn-secondary");
+          shareBtnText.innerText = "Shared (Make Private)";
+        } else {
+          shareBtn.classList.remove("btn-secondary");
+          shareBtn.classList.add("btn-primary");
+          shareBtnText.innerText = "Share Publicly";
         }
 
-        function closeRecipeModal() {
-            modal.style.display = 'none';
-            if (!catModal.style.display || catModal.style.display === 'none') {
-                document.body.style.overflow = 'auto';
+        modal.style.display = "block";
+        document.body.style.overflow = "hidden";
+
+        lucide.createIcons();
+      }
+
+      function closeRecipeModal() {
+        modal.style.display = "none";
+        if (!catModal.style.display || catModal.style.display === "none") {
+          document.body.style.overflow = "auto";
+        }
+        currentEntryId = null;
+      }
+
+      // Share Logic
+      async function toggleShare() {
+        if (!currentEntryId) return;
+
+        const shareBtn = document.getElementById("modalShareBtn");
+        const shareBtnText = document.getElementById("shareBtnText");
+        // Optimistic UI
+        const isCurrentlyPublic = shareBtnText.innerText.includes("Shared");
+        shareBtnText.innerText = "Updating...";
+
+        try {
+          const response = await fetch(
+            `/api/community/share/${currentEntryId}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
             }
-            currentEntryId = null;
-        }
+          );
+          const data = await response.json();
 
-        // Share Logic
-        async function toggleShare() {
-            if (!currentEntryId) return;
-            
-            const shareBtn = document.getElementById('modalShareBtn');
-            const shareBtnText = document.getElementById('shareBtnText');
-            // Optimistic UI
-            const isCurrentlyPublic = shareBtnText.innerText.includes('Shared');
-            shareBtnText.innerText = 'Updating...';
-            
-            try {
-                const response = await fetch(`/api/community/share/${currentEntryId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    const card = document.querySelector(`.recipe-card button[onclick*="${currentEntryId}"]`).closest('.recipe-card');
-                    card.dataset.public = data.is_public;
-                    
-                    if (data.is_public) {
-                        shareBtn.classList.remove('btn-primary');
-                        shareBtn.classList.add('btn-secondary');
-                        shareBtnText.innerText = 'Shared (Make Private)';
-                        showToast('Recipe is now public!', 'success');
-                    } else {
-                        shareBtn.classList.remove('btn-secondary');
-                        shareBtn.classList.add('btn-primary');
-                        shareBtnText.innerText = 'Share Publicly';
-                        showToast('Recipe is now private.', 'info');
-                    }
-                } else {
-                    showToast('Failed to update share status.', 'warning');
-                    shareBtnText.innerText = isCurrentlyPublic ? 'Shared (Make Private)' : 'Share Publicly';
-                }
-            } catch (error) {
-                console.error('Error sharing:', error);
-                showToast('Failed to update share status.', 'warning');
-                shareBtnText.innerText = isCurrentlyPublic ? 'Shared (Make Private)' : 'Share Publicly';
+          if (data.success) {
+            const card = document
+              .querySelector(
+                `.recipe-card button[onclick*="${currentEntryId}"]`
+              )
+              .closest(".recipe-card");
+            card.dataset.public = data.is_public;
+
+            if (data.is_public) {
+              shareBtn.classList.remove("btn-primary");
+              shareBtn.classList.add("btn-secondary");
+              shareBtnText.innerText = "Shared (Make Private)";
+              showToast("Recipe is now public!", "success");
+            } else {
+              shareBtn.classList.remove("btn-secondary");
+              shareBtn.classList.add("btn-primary");
+              shareBtnText.innerText = "Share Publicly";
+              showToast("Recipe is now private.", "info");
             }
+          } else {
+            showToast("Failed to update share status.", "warning");
+            shareBtnText.innerText = isCurrentlyPublic
+              ? "Shared (Make Private)"
+              : "Share Publicly";
+          }
+        } catch (error) {
+          console.error("Error sharing:", error);
+          showToast("Failed to update share status.", "warning");
+          shareBtnText.innerText = isCurrentlyPublic
+            ? "Shared (Make Private)"
+            : "Share Publicly";
+        }
+      }
+
+      // Category Modal Logic
+      function openCategoryModal() {
+        const card = document
+          .querySelector(`.recipe-card button[onclick*="${currentEntryId}"]`)
+          .closest(".recipe-card");
+        const currentCat = card.dataset.category;
+        const input = document.getElementById("newCategoryInput");
+        input.value = currentCat;
+        catModal.style.display = "block";
+        input.focus();
+      }
+
+      function closeCategoryModal() {
+        catModal.style.display = "none";
+        if (!modal.style.display || modal.style.display === "none") {
+          document.body.style.overflow = "auto";
+        }
+      }
+
+      // Export Modal Logic
+      const exportModal = document.getElementById("exportModal");
+      const emptyWarningModal = document.getElementById("emptyWarningModal");
+
+      function openExportModal() {
+        // Check if cookbook is empty (re-query for accuracy)
+        const currentCards = document.querySelectorAll(".recipe-card");
+        if (currentCards.length === 0) {
+          emptyWarningModal.style.display = "block";
+          document.body.style.overflow = "hidden";
+          lucide.createIcons();
+          return;
         }
 
-        // Category Modal Logic
-        function openCategoryModal() {
-            const card = document.querySelector(`.recipe-card button[onclick*="${currentEntryId}"]`).closest('.recipe-card');
-            const currentCat = card.dataset.category;
-            const input = document.getElementById('newCategoryInput');
-            input.value = currentCat;
-            catModal.style.display = 'block';
-            input.focus();
-        }
+        exportModal.style.display = "block";
+        document.body.style.overflow = "hidden";
+        // Sync category with current filter
+        document.getElementById("exportCategorySelect").value =
+          document.getElementById("categoryFilter").value;
+      }
 
-        function closeCategoryModal() {
-            catModal.style.display = 'none';
-            if (!modal.style.display || modal.style.display === 'none') {
-                document.body.style.overflow = 'auto';
-            }
-        }
+      function closeExportModal() {
+        exportModal.style.display = "none";
+        document.body.style.overflow = "auto";
+      }
 
-        // Export Modal Logic
-        const exportModal = document.getElementById('exportModal');
-        const emptyWarningModal = document.getElementById('emptyWarningModal');
+      function closeEmptyWarningModal() {
+        emptyWarningModal.style.display = "none";
+        document.body.style.overflow = "auto";
+      }
+      function submitExportForm() {
+        document.getElementById("exportForm").submit();
+        closeExportModal();
+      }
 
-        function openExportModal() {
-            // Check if cookbook is empty (re-query for accuracy)
-            const currentCards = document.querySelectorAll('.recipe-card');
-            if (currentCards.length === 0) {
-                emptyWarningModal.style.display = 'block';
-                document.body.style.overflow = 'hidden';
-                lucide.createIcons();
-                return;
-            }
-
-            exportModal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-            // Sync category with current filter
-            document.getElementById('exportCategorySelect').value = document.getElementById('categoryFilter').value;
-        }
-
-        function closeExportModal() {
-            exportModal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-
-        function closeEmptyWarningModal() {
-            emptyWarningModal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-        function submitExportForm() {
-            document.getElementById('exportForm').submit();
-            closeExportModal();
-        }
-
-        // Handle Suggestion Chips
-        document.querySelectorAll('.suggestion-chip').forEach(chip => {
-            chip.addEventListener('click', () => {
-                document.getElementById('newCategoryInput').value = chip.innerText;
-            });
+      // Handle Suggestion Chips
+      document.querySelectorAll(".suggestion-chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          document.getElementById("newCategoryInput").value = chip.innerText;
         });
+      });
 
-        // Save Category
-        async function saveNewCategory() {
-            if (!currentEntryId) return;
+      // Save Category
+      async function saveNewCategory() {
+        if (!currentEntryId) return;
 
-            const newCategory = document.getElementById('newCategoryInput').value.trim();
-            const card = document.querySelector(`.recipe-card button[onclick*="${currentEntryId}"]`).closest('.recipe-card');
-            const currentCategory = card.dataset.category;
-            
-            if (newCategory === "") return;
-            
-            try {
-                const response = await fetch(`/api/categorize/${currentEntryId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ category: newCategory })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Update UI
-                    card.dataset.category = data.category;
-                    card.querySelector('.category-badge').innerText = data.category;
-                    
-                    closeCategoryModal();
-                    closeRecipeModal();
-                    
-                    // Simple Toast instead of Alert
-                    showToast(`Updated to ${data.category}`, 'success');
-                    
-                    if (!document.querySelector(`#categoryFilter option[value="${data.category}"]`)) {
-                        setTimeout(() => location.reload(), 1000);
-                    }
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showToast("Failed to update.", "warning");
+        const newCategory = document
+          .getElementById("newCategoryInput")
+          .value.trim();
+        const card = document
+          .querySelector(`.recipe-card button[onclick*="${currentEntryId}"]`)
+          .closest(".recipe-card");
+        const currentCategory = card.dataset.category;
+
+        if (newCategory === "") return;
+
+        try {
+          const response = await fetch(`/api/categorize/${currentEntryId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ category: newCategory }),
+          });
+          const data = await response.json();
+
+          if (data.success) {
+            // Update UI
+            card.dataset.category = data.category;
+            card.querySelector(".category-badge").innerText = data.category;
+
+            closeCategoryModal();
+            closeRecipeModal();
+
+            // Simple Toast instead of Alert
+            showToast(`Updated to ${data.category}`, "success");
+
+            if (
+              !document.querySelector(
+                `#categoryFilter option[value="${data.category}"]`
+              )
+            ) {
+              setTimeout(() => location.reload(), 1000);
             }
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          showToast("Failed to update.", "warning");
+        }
+      }
+
+      document
+        .getElementById("modalCategoryBtn")
+        .addEventListener("click", openCategoryModal);
+
+      // Toast Helper
+      function showToast(message, type) {
+        const toast = document.createElement("div");
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<i data-lucide="${
+          type === "success" ? "check-circle" : "info"
+        }" class="w-4 h-4"></i> ${message}`;
+        document.body.appendChild(toast);
+        lucide.createIcons();
+
+        setTimeout(() => {
+          toast.classList.add("show");
+          setTimeout(() => {
+            toast.classList.remove("show");
+            setTimeout(() => toast.remove(), 300);
+          }, 3000);
+        }, 100);
+      }
+
+      // Smart formatter for recipe text in modal — creates structured sections
+      function formatRecipe(text) {
+        // Normalize line breaks
+        text = text.replace(/\r\n/g, "\n").trim();
+
+        // Split into lines
+        const lines = text.split("\n");
+        let html = "";
+        let inList = false;
+        let listType = null; // 'ol' or 'ul'
+        let currentSection = null;
+        let sectionContent = "";
+
+        // Determine section type for styling
+        function getSectionClass(title) {
+          const t = title.toLowerCase();
+          if (t.includes("health") || t.includes("benefit"))
+            return "section-health";
+          if (t.includes("ingredient")) return "section-ingredients";
+          if (
+            t.includes("instruction") ||
+            t.includes("steps") ||
+            t.includes("directions") ||
+            t.includes("method")
+          )
+            return "section-instructions";
+          if (
+            t.includes("tip") ||
+            t.includes("cooking tip") ||
+            t.includes("note")
+          )
+            return "section-tips";
+          if (t.includes("serving") || t.includes("suggestion"))
+            return "section-serving";
+          if (t.includes("nutrition")) return "section-nutrition";
+          return "section-default";
         }
 
-        document.getElementById('modalCategoryBtn').addEventListener('click', openCategoryModal);
-
-        // Toast Helper
-        function showToast(message, type) {
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'info'}" class="w-4 h-4"></i> ${message}`;
-            document.body.appendChild(toast);
-            lucide.createIcons();
-            
-            setTimeout(() => {
-                toast.classList.add('show');
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                    setTimeout(() => toast.remove(), 300);
-                }, 3000);
-            }, 100);
+        function getSectionIcon(title) {
+          const t = title.toLowerCase();
+          if (t.includes("health") || t.includes("benefit")) return "💚";
+          if (t.includes("ingredient")) return "🥘";
+          if (
+            t.includes("instruction") ||
+            t.includes("steps") ||
+            t.includes("directions") ||
+            t.includes("method")
+          )
+            return "👨‍🍳";
+          if (t.includes("tip") || t.includes("cooking tip")) return "💡";
+          if (t.includes("serving") || t.includes("suggestion")) return "🍽️";
+          if (t.includes("nutrition")) return "📊";
+          if (
+            t.includes("combine") ||
+            t.includes("whisk") ||
+            t.includes("cook") ||
+            t.includes("add") ||
+            t.includes("chill") ||
+            t.includes("pour") ||
+            t.includes("place") ||
+            t.includes("remove") ||
+            t.includes("thicken") ||
+            t.includes("vanilla")
+          )
+            return "";
+          return "📝";
         }
 
-        // Smart formatter for recipe text in modal — creates structured sections
-        function formatRecipe(text) {
-            // Normalize line breaks
-            text = text.replace(/\r\n/g, '\n').trim();
-            
-            // Split into lines
-            const lines = text.split('\n');
-            let html = '';
-            let inList = false;
-            let listType = null; // 'ol' or 'ul'
-            let currentSection = null;
-            let sectionContent = '';
-            
-            // Determine section type for styling
-            function getSectionClass(title) {
-                const t = title.toLowerCase();
-                if (t.includes('health') || t.includes('benefit')) return 'section-health';
-                if (t.includes('ingredient')) return 'section-ingredients';
-                if (t.includes('instruction') || t.includes('steps') || t.includes('directions') || t.includes('method')) return 'section-instructions';
-                if (t.includes('tip') || t.includes('cooking tip') || t.includes('note')) return 'section-tips';
-                if (t.includes('serving') || t.includes('suggestion')) return 'section-serving';
-                if (t.includes('nutrition')) return 'section-nutrition';
-                return 'section-default';
-            }
-            
-            function getSectionIcon(title) {
-                const t = title.toLowerCase();
-                if (t.includes('health') || t.includes('benefit')) return '💚';
-                if (t.includes('ingredient')) return '🥘';
-                if (t.includes('instruction') || t.includes('steps') || t.includes('directions') || t.includes('method')) return '👨‍🍳';
-                if (t.includes('tip') || t.includes('cooking tip')) return '💡';
-                if (t.includes('serving') || t.includes('suggestion')) return '🍽️';
-                if (t.includes('nutrition')) return '📊';
-                if (t.includes('combine') || t.includes('whisk') || t.includes('cook') || t.includes('add') || t.includes('chill') || t.includes('pour') || t.includes('place') || t.includes('remove') || t.includes('thicken') || t.includes('vanilla')) return '';
-                return '📝';
-            }
-            
-            function closeList() {
-                if (inList) {
-                    html += listType === 'ol' ? '</ol>' : '</ul>';
-                    inList = false;
-                    listType = null;
-                }
-            }
-            
-            function closeSection() {
-                closeList();
-                if (currentSection) {
-                    html += '</div></div>';
-                    currentSection = null;
-                }
-            }
-            
-            for (let i = 0; i < lines.length; i++) {
-                let line = lines[i].trim();
-                if (!line) continue;
-                
-                // Detect bold headers: **Title** or **Title:** or standalone bold text
-                const boldMatch = line.match(/^\*\*(.*?)\*\*:?\s*$/);
-                if (boldMatch) {
-                    closeSection();
-                    const title = boldMatch[1].replace(/:$/, '');
-                    const sectionClass = getSectionClass(title);
-                    const icon = getSectionIcon(title);
-                    currentSection = title;
-                    html += `<div class="recipe-section ${sectionClass}"><div class="recipe-section-header">${icon ? '<span class="section-icon">' + icon + '</span>' : ''}<h4>${title}</h4></div><div class="recipe-section-body">`;
-                    continue;
-                }
-                
-                // Detect inline bold with content: **Title:** content... 
-                const inlineBoldMatch = line.match(/^\*\*(.*?)\*\*:?\s+(.+)$/);
-                if (inlineBoldMatch) {
-                    closeSection();
-                    const title = inlineBoldMatch[1].replace(/:$/, '');
-                    const content = inlineBoldMatch[2];
-                    const sectionClass = getSectionClass(title);
-                    const icon = getSectionIcon(title);
-                    currentSection = title;
-                    html += `<div class="recipe-section ${sectionClass}"><div class="recipe-section-header">${icon ? '<span class="section-icon">' + icon + '</span>' : ''}<h4>${title}</h4></div><div class="recipe-section-body"><p>${content}</p>`;
-                    continue;
-                }
-                
-                // Detect numbered steps: 1. text, 2. text etc.
-                const numberedMatch = line.match(/^(\d+)\.\s+(.+)$/);
-                if (numberedMatch) {
-                    if (!inList || listType !== 'ol') {
-                        closeList();
-                        html += '<ol class="recipe-steps-list">';
-                        inList = true;
-                        listType = 'ol';
-                    }
-                    html += `<li>${numberedMatch[2].replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</li>`;
-                    continue;
-                }
-                
-                // Skip horizontal rules (---, ***, ___)
-                if (/^[-*_]{3,}$/.test(line)) {
-                    continue;
-                }
-                
-                // Detect standalone numbers like just "1." or "2." (skip them)
-                if (/^\d+\.$/.test(line)) {
-                    continue;
-                }
-                
-                // Detect bullet points: * text or - text
-                const bulletMatch = line.match(/^[\*\-]\s+(.+)$/);
-                if (bulletMatch) {
-                    if (!inList || listType !== 'ul') {
-                        closeList();
-                        html += '<ul class="recipe-bullet-list">';
-                        inList = true;
-                        listType = 'ul';
-                    }
-                    html += `<li>${bulletMatch[1].replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</li>`;
-                    continue;
-                }
-                
-                // Handle remaining inline bold
-                line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                
-                if (currentSection && getSectionClass(currentSection) === 'section-instructions') {
-                    if (!inList || listType !== 'ol') {
-                        closeList();
-                        html += '<ol class="recipe-steps-list">';
-                        inList = true;
-                        listType = 'ol';
-                    }
-                    html += `<li>${line}</li>`;
-                } else {
-                    // Plain text — close any list and add as paragraph
-                    closeList();
-                    html += `<p>${line}</p>`;
-                }
-            }
-            
+        function closeList() {
+          if (inList) {
+            html += listType === "ol" ? "</ol>" : "</ul>";
+            inList = false;
+            listType = null;
+          }
+        }
+
+        function closeSection() {
+          closeList();
+          if (currentSection) {
+            html += "</div></div>";
+            currentSection = null;
+          }
+        }
+
+        for (let i = 0; i < lines.length; i++) {
+          let line = lines[i].trim();
+          if (!line) continue;
+
+          // Detect bold headers: **Title** or **Title:** or standalone bold text
+          const boldMatch = line.match(/^\*\*(.*?)\*\*:?\s*$/);
+          if (boldMatch) {
             closeSection();
-            
-            return html || '<p>' + text.replace(/\n/g, '<br>') + '</p>';
-        }
+            const title = boldMatch[1].replace(/:$/, "");
+            const sectionClass = getSectionClass(title);
+            const icon = getSectionIcon(title);
+            currentSection = title;
+            html += `<div class="recipe-section ${sectionClass}"><div class="recipe-section-header">${
+              icon ? '<span class="section-icon">' + icon + "</span>" : ""
+            }<h4>${title}</h4></div><div class="recipe-section-body">`;
+            continue;
+          }
 
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                closeRecipeModal();
+          // Detect inline bold with content: **Title:** content...
+          const inlineBoldMatch = line.match(/^\*\*(.*?)\*\*:?\s+(.+)$/);
+          if (inlineBoldMatch) {
+            closeSection();
+            const title = inlineBoldMatch[1].replace(/:$/, "");
+            const content = inlineBoldMatch[2];
+            const sectionClass = getSectionClass(title);
+            const icon = getSectionIcon(title);
+            currentSection = title;
+            html += `<div class="recipe-section ${sectionClass}"><div class="recipe-section-header">${
+              icon ? '<span class="section-icon">' + icon + "</span>" : ""
+            }<h4>${title}</h4></div><div class="recipe-section-body"><p>${content}</p>`;
+            continue;
+          }
+
+          // Detect numbered steps: 1. text, 2. text etc.
+          const numberedMatch = line.match(/^(\d+)\.\s+(.+)$/);
+          if (numberedMatch) {
+            if (!inList || listType !== "ol") {
+              closeList();
+              html += '<ol class="recipe-steps-list">';
+              inList = true;
+              listType = "ol";
             }
+            html += `<li>${numberedMatch[2].replace(
+              /\*\*(.*?)\*\*/g,
+              "<strong>$1</strong>"
+            )}</li>`;
+            continue;
+          }
+
+          // Skip horizontal rules (---, ***, ___)
+          if (/^[-*_]{3,}$/.test(line)) {
+            continue;
+          }
+
+          // Detect standalone numbers like just "1." or "2." (skip them)
+          if (/^\d+\.$/.test(line)) {
+            continue;
+          }
+
+          // Detect bullet points: * text or - text
+          const bulletMatch = line.match(/^[\*\-]\s+(.+)$/);
+          if (bulletMatch) {
+            if (!inList || listType !== "ul") {
+              closeList();
+              html += '<ul class="recipe-bullet-list">';
+              inList = true;
+              listType = "ul";
+            }
+            html += `<li>${bulletMatch[1].replace(
+              /\*\*(.*?)\*\*/g,
+              "<strong>$1</strong>"
+            )}</li>`;
+            continue;
+          }
+
+          // Handle remaining inline bold
+          line = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+          if (
+            currentSection &&
+            getSectionClass(currentSection) === "section-instructions"
+          ) {
+            if (!inList || listType !== "ol") {
+              closeList();
+              html += '<ol class="recipe-steps-list">';
+              inList = true;
+              listType = "ol";
+            }
+            html += `<li>${line}</li>`;
+          } else {
+            // Plain text — close any list and add as paragraph
+            closeList();
+            html += `<p>${line}</p>`;
+          }
         }
 
-        // Animation on load
-        document.addEventListener('DOMContentLoaded', () => {
-            const recipeCards = document.querySelectorAll('.recipe-card');
-            recipeCards.forEach((card, index) => {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
-                setTimeout(() => {
-                    card.style.transition = 'all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1)';
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                }, index * 50);
-            });
+        closeSection();
+
+        return html || "<p>" + text.replace(/\n/g, "<br>") + "</p>";
+      }
+
+      window.onclick = function (event) {
+        if (event.target == modal) {
+          closeRecipeModal();
+        }
+      };
+
+      // Animation on load
+      document.addEventListener("DOMContentLoaded", () => {
+        const recipeCards = document.querySelectorAll(".recipe-card");
+        recipeCards.forEach((card, index) => {
+          card.style.opacity = "0";
+          card.style.transform = "translateY(20px)";
+          setTimeout(() => {
+            card.style.transition =
+              "all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1)";
+            card.style.opacity = "1";
+            card.style.transform = "translateY(0)";
+          }, index * 50);
         });
+      });
     </script>
 
     <!-- Minimal Footer -->
-    <footer class="footer-minimal" style="background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.1); padding: var(--space-8) 0; margin-top: var(--space-20); text-align: center;">
-        <div class="container">
-            <div style="display: flex; flex-direction: column; align-items: center; gap: var(--space-2);">
-                <div style="display: flex; align-items: center; gap: 0.5rem; color: white; opacity: 0.9; margin-bottom: 0.25rem;">
-                    <i data-lucide="salad" class="w-5 h-5 text-primary"></i>
-                    <span style="font-weight: 800; font-size: 1rem; letter-spacing: -0.01em;">HealthRecipe<span style="color: var(--primary-400);">AI</span></span>
-                </div>
-                <p style="color: var(--gray-400); font-size: 0.75rem; font-weight: 500; max-width: 600px; line-height: 1.6;">
-                    &copy; 2024 HealthRecipeAI. All rights reserved.
-                    <span style="display: block; margin-top: 0.25rem; color: var(--gray-500); font-weight: 400;">Not a substitute for professional medical advice.</span>
-                </p>
-            </div>
+    <footer
+      class="footer-minimal"
+      style="
+        background: rgba(15, 23, 42, 0.9);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: var(--space-8) 0;
+        margin-top: var(--space-20);
+        text-align: center;
+      "
+    >
+      <div class="container">
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-2);
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+              color: white;
+              opacity: 0.9;
+              margin-bottom: 0.25rem;
+            "
+          >
+            <i data-lucide="salad" class="w-5 h-5 text-primary"></i>
+            <span
+              style="font-weight: 800; font-size: 1rem; letter-spacing: -0.01em"
+              >HealthRecipe<span style="color: var(--primary-400)"
+                >AI</span
+              ></span
+            >
+          </div>
+          <p
+            style="
+              color: var(--gray-400);
+              font-size: 0.75rem;
+              font-weight: 500;
+              max-width: 600px;
+              line-height: 1.6;
+            "
+          >
+            &copy; 2024 HealthRecipeAI. All rights reserved.
+            <span
+              style="
+                display: block;
+                margin-top: 0.25rem;
+                color: var(--gray-500);
+                font-weight: 400;
+              "
+              >Not a substitute for professional medical advice.</span
+            >
+          </p>
         </div>
+      </div>
     </footer>
     <script src="{{ url_for('static', filename='js/network_monitor.js') }}"></script>
-</body>
-
+  </body>
 </html>

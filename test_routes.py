@@ -124,7 +124,6 @@ protected_get_routes = [
     "/generate_report/test123",
     "/view_report/test123",
     "/serve_report_pdf/test123",
-    "/cook/000000000000000000000000",      # valid-format ObjectId
 ]
 
 for path in protected_get_routes:
